@@ -140,6 +140,7 @@ public class JerseyEurekaHttpClientFactory implements TransportClientFactory {
                 .withAdditionalFilters(additionalFilters)
                 .withMyInstanceInfo(myInstanceInfo)
                 .withUserAgent("Java-EurekaClient")
+                // 将config的参数进行赋值
                 .withClientConfig(clientConfig)
                 .withClientIdentity(clientIdentity);
         
@@ -147,8 +148,10 @@ public class JerseyEurekaHttpClientFactory implements TransportClientFactory {
         hostnameVerifier.ifPresent(clientBuilder::withHostnameVerifier);
 
         if ("true".equals(System.getProperty("com.netflix.eureka.shouldSSLConnectionsUseSystemSocketFactory"))) {
+            // 使用SSL
             clientBuilder.withClientName("DiscoveryClient-HTTPClient-System").withSystemSSLConfiguration();
         } else if (clientConfig.getProxyHost() != null && clientConfig.getProxyPort() != null) {
+            // 使用代理
             clientBuilder.withClientName("Proxy-DiscoveryClient-HTTPClient")
                     .withProxy(
                             clientConfig.getProxyHost(), Integer.parseInt(clientConfig.getProxyPort()),
@@ -172,6 +175,8 @@ public class JerseyEurekaHttpClientFactory implements TransportClientFactory {
     /**
      * Currently use EurekaJerseyClientBuilder. Once old transport in DiscoveryClient is removed, incorporate
      * EurekaJerseyClientBuilder here, and remove it.
+     *
+     * 目前使用EurekaJerseyClientBuilder。 删除DiscoveryClient中的旧传输后，在此处合并EurekaJerseyClientBuilder并将其删除。
      */
     public static class JerseyEurekaHttpClientFactoryBuilder extends EurekaClientFactoryBuilder<JerseyEurekaHttpClientFactory, JerseyEurekaHttpClientFactoryBuilder> {
 
@@ -192,9 +197,11 @@ public class JerseyEurekaHttpClientFactory implements TransportClientFactory {
         public JerseyEurekaHttpClientFactory build() {
             Map<String, String> additionalHeaders = new HashMap<>();
             if (allowRedirect) {
+                // 允许重定向到其他的eureka服务器
                 additionalHeaders.put(HTTP_X_DISCOVERY_ALLOW_REDIRECT, "true");
             }
             if (EurekaAccept.compact == eurekaAccept) {
+                // 是否是简练版的，默认是使用的full
                 additionalHeaders.put(EurekaAccept.HTTP_X_EUREKA_ACCEPT, eurekaAccept.name());
             }
 

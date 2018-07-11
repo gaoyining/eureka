@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 /**
  * This rule matches always and returns the current status of the instance.
  *
+ * 此规则始终匹配并返回实例的当前状态。
+ *
  * Created by Nikos Michalakis on 7/13/16.
  */
 public class AlwaysMatchInstanceStatusRule implements InstanceStatusOverrideRule {

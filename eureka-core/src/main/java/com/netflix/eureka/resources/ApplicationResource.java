@@ -145,6 +145,7 @@ public class ApplicationResource {
                                 @HeaderParam(PeerEurekaNode.HEADER_REPLICATION) String isReplication) {
         logger.debug("Registering instance {} (replication={})", info.getId(), isReplication);
         // validate that the instanceinfo contains all the necessary required fields
+        // 验证instanceinfo包含所有必需的必填字段
         if (isBlank(info.getId())) {
             return Response.status(400).entity("Missing instanceId").build();
         } else if (isBlank(info.getHostName())) {
@@ -161,6 +162,7 @@ public class ApplicationResource {
             return Response.status(400).entity("Missing dataCenterInfo Name").build();
         }
 
+        // aws 跳过
         // handle cases where clients may be registering with bad DataCenterInfo with missing data
         DataCenterInfo dataCenterInfo = info.getDataCenterInfo();
         if (dataCenterInfo instanceof UniqueIdentifier) {
@@ -182,7 +184,10 @@ public class ApplicationResource {
             }
         }
 
+        // ----------------------关键方法---------------------
+        // 执行注册实例
         registry.register(info, "true".equals(isReplication));
+        // 返回 204 成功
         return Response.status(204).build();  // 204 to be backwards compatible
     }
 

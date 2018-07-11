@@ -19,7 +19,9 @@ public class HealthCheckCallbackToHandlerBridge implements HealthCheckHandler {
     @Override
     public InstanceInfo.InstanceStatus getStatus(InstanceInfo.InstanceStatus currentStatus) {
         if (null == callback || InstanceInfo.InstanceStatus.STARTING == currentStatus
-                || InstanceInfo.InstanceStatus.OUT_OF_SERVICE == currentStatus) { // Do not go to healthcheck handler if the status is starting or OOS.
+                || InstanceInfo.InstanceStatus.OUT_OF_SERVICE == currentStatus) {
+            // Do not go to healthcheck handler if the status is starting or OOS.
+            // 如果状态正在启动或OOS，请不要去健康检查处理程序。
             return currentStatus;
         }
 

@@ -51,6 +51,8 @@ public final class ResolverUtils {
     /**
      * @return returns two element array with first item containing list of endpoints from client's zone,
      *         and in the second list all the remaining ones
+     *
+     *         返回两个元素数组，第一个项目包含来自客户端区域的端点列表，第二个列表中包含所有剩余的端点
      */
     public static List<AwsEndpoint>[] splitByZone(List<AwsEndpoint> eurekaEndpoints, String myZone) {
         if (eurekaEndpoints.isEmpty()) {
@@ -82,6 +84,8 @@ public final class ResolverUtils {
 
     /**
      * Randomize server list using local IPv4 address hash as a seed.
+     *
+     * 使用本地IPv4地址哈希作为种子随机化服务器列表。
      *
      * @return a copy of the original list with elements in the random order
      */

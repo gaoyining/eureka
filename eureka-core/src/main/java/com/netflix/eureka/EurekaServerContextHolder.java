@@ -19,10 +19,15 @@ package com.netflix.eureka;
 /**
  * A static holder for the server context for use in non-DI cases.
  *
+ * 服务器上下文的静态持有者，用于非DI情况。单例
+ *
  * @author David Liu
  */
 public class EurekaServerContextHolder {
 
+    /**
+     * Eureka-Server上下文
+     */
     private final EurekaServerContext serverContext;
 
     private EurekaServerContextHolder(EurekaServerContext serverContext) {

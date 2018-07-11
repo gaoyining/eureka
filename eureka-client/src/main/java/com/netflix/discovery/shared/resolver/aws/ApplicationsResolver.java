@@ -73,6 +73,7 @@ public class ApplicationsResolver implements ClusterResolver<AwsEndpoint> {
     public interface ApplicationsSource {
         /**
          * @return the known set of Applications, or null if the data is beyond the stalenss threshold
+         * 已知的应用程序集，如果数据超出stalenss阈值，则为null
          */
         Applications getApplications(int stalenessThreshold, TimeUnit timeUnit);
     }

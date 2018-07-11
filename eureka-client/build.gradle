@@ -38,3 +38,11 @@ dependencies {
     testCompile "org.mock-server:mockserver-netty:${mockserverVersion}"
     testCompile "com.netflix.governator:governator:${governatorVersion}"
 }
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+}

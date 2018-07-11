@@ -22,3 +22,11 @@ dependencies {
     testCompile "org.mockito:mockito-core:${mockitoVersion}"
     testRuntime 'org.slf4j:slf4j-simple:1.7.10'
 }
+
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}

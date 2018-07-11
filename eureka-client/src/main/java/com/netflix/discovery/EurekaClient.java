@@ -19,10 +19,21 @@ import com.netflix.discovery.shared.LookupService;
  * This interface does NOT try to clean up the current client interface for eureka 1.x. Rather it tries
  * to provide an easier transition path from eureka 1.x to eureka 2.x.
  *
+ * 在当前DiscoveryClient实现上定义一个简单的接口。该接口不会尝试清理eureka 1.x的当前客户端接口。
+ * 相反，它试图提供从eureka 1.x到eureka 2.x的更简单的过渡路径。
+ *
  * EurekaClient API contracts are:
  *  - provide the ability to get InstanceInfo(s) (in various different ways)
  *  - provide the ability to get data about the local Client (known regions, own AZ etc)
  *  - provide the ability to register and access the healthcheck handler for the client
+ *
+ * EurekaClient API契约包括：
+ *  - 提供多种方法获取应用集合{@link com.netflix.discovery.shared.Applications}
+ *          和 应用实例信息集合{@link com.netflix.appinfo.InstanceInfo}。
+ *  - 提供方法获取本地客户端信息，例如:应用管理器{@link com.netflix.appinfo.ApplicationInfoManager}
+ *          和 Eureka-Client 配置{@link com.netflix.discovery.EurekaClientConfig}。
+ *  - 提供方法注册本地客户端的健康检查和 Eureka 事件监听器。
+ *
  *
  * @author David Liu
  */
@@ -43,6 +54,8 @@ public interface EurekaClient extends LookupService {
     /**
      * Get all applications registered with a specific eureka service.
      *
+     * 获取使用特定eureka服务注册的所有应用程序。
+     *
      * @param serviceUrl The string representation of the service url.
      * @return The registry information containing all applications.
      */
@@ -50,6 +63,8 @@ public interface EurekaClient extends LookupService {
 
     /**
      * Gets the list of instances matching the given VIP Address.
+     *
+     * 获取与给定VIP地址匹配的实例列表。
      *
      * @param vipAddress The VIP address to match the instances for.
      * @param secure true if it is a secure vip address, false otherwise
@@ -59,6 +74,8 @@ public interface EurekaClient extends LookupService {
 
     /**
      * Gets the list of instances matching the given VIP Address in the passed region.
+     *
+     * 获取与传递区域中给定VIP地址匹配的实例列表。
      *
      * @param vipAddress The VIP address to match the instances for.
      * @param secure true if it is a secure vip address, false otherwise

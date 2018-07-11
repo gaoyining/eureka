@@ -28,6 +28,12 @@ import com.netflix.eureka.registry.AbstractInstanceRegistry;
  * an explicit cancellation except that there is no communication between the
  * {@link T} and {@link LeaseManager}.
  *
+ * 如果租约在没有续订的情况下过去，它最终将到期，
+ * 从而标记相关的{@link T}以立即驱逐 - 这类似于明确取消，除了{@link T}和{@link LeaseManager}之间没有通信。
+ *
+ * 描述{@link T}的基于时间的可用性。
+ * 目的是避免在{@link AbstractInstanceRegistry}中累积实例，这是由于在AWS环境中并不罕见的非正常关闭。
+ *
  * @author Karthik Ranganathan, Greg Kim
  */
 public class Lease<T> {
@@ -38,12 +44,30 @@ public class Lease<T> {
 
     public static final int DEFAULT_DURATION_IN_SECS = 90;
 
+    /**
+     * 实体
+     */
     private T holder;
+    /**
+     * 取消注册时间戳
+     */
     private long evictionTimestamp;
+    /**
+     * 时注册间戳
+     */
     private long registrationTimestamp;
+    /**
+     * 开始服务时间戳
+     */
     private long serviceUpTimestamp;
     // Make it volatile so that the expiration task would see this quicker
+    /**
+     * 最后更新时间戳
+     */
     private volatile long lastUpdateTimestamp;
+    /**
+     * 租约持续时长，单位：毫秒
+     */
     private long duration;
 
     public Lease(T r, int durationInSecs) {
@@ -57,6 +81,9 @@ public class Lease<T> {
     /**
      * Renew the lease, use renewal duration if it was specified by the
      * associated {@link T} during registration, otherwise default duration is
+     *
+     * 如果在注册期间由关联的{@link T}指定，则续订租约，使用续订期限，否则默认持续时间为
+     *
      * {@link #DEFAULT_DURATION_IN_SECS}.
      */
     public void renew() {
@@ -66,6 +93,8 @@ public class Lease<T> {
 
     /**
      * Cancels the lease by updating the eviction time.
+     *
+     * 通过更新驱逐时间来取消租约。
      */
     public void cancel() {
         if (evictionTimestamp <= 0) {
@@ -76,6 +105,8 @@ public class Lease<T> {
     /**
      * Mark the service as up. This will only take affect the first time called,
      * subsequent calls will be ignored.
+     *
+     * 将服务标记为up。 这只会在第一次调用时生效，后续调用将被忽略。
      */
     public void serviceUp() {
         if (serviceUpTimestamp == 0) {
@@ -105,9 +136,16 @@ public class Lease<T> {
      * instances that ungracefully shutdown. Due to possible wide ranging impact to existing usage, this will
      * not be fixed.
      *
+     * 检查给定{@link com.netflix.appinfo.InstanceInfo}的租约是否已过期。
+     *
+     * 请注意，由于renew（）执行'错误'操作并将lastUpdateTimestamp设置为+持续时间超过应有的时间，
+     * 因此到期时间实际上是2 *持续时间。这是一个小错误，应该只影响不合理关闭的实例。
+     * 如果可能对现有用途产生广泛影响，这将无法修复。
+     *
      * @param additionalLeaseMs any additional lease time to add to the lease evaluation in ms.
      */
     public boolean isExpired(long additionalLeaseMs) {
+        // 取消注册时间戳 > 0 || 当前时间 > (最后更新时间戳 + 租约持续时长 + 补偿时间) duration 为90 * 1000
         return (evictionTimestamp > 0 || System.currentTimeMillis() > (lastUpdateTimestamp + duration + additionalLeaseMs));
     }
 

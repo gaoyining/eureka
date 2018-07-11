@@ -28,6 +28,9 @@ import org.slf4j.LoggerFactory;
  * For example eureka client registry data staleness defines thresholds 30s, 60s, 120s, 240s, 480s. Delay of 90s
  * would be mapped to gauge values {30s=0, 60s=1, 120=0, 240s=0, 480s=0, unlimited=0}.
  *
+ * 表示测量值映射到的不同阈值级别的量表集合。 值1表示达到的最低阈值水平。
+ * 例如，尤eureka客户端注册表数据过期定义了阈值30s，60s，120s，240s，480s。 90s的延迟将被映射到规格值
+ * {30s = 0,60s = 1,120 = 0,240s = 0,480s = 0，不限制= 0}。
  * @author Tomasz Bak
  */
 public class ThresholdLevelsMetric {
@@ -42,6 +45,7 @@ public class ThresholdLevelsMetric {
     public ThresholdLevelsMetric(Object owner, String prefix, long[] levels) {
         this.levels = levels;
         this.gauges = new LongGauge[levels.length];
+
         for (int i = 0; i < levels.length; i++) {
             String name = prefix + String.format("%05d", levels[i]);
             MonitorConfig config = new MonitorConfig.Builder(name)
@@ -50,6 +54,7 @@ public class ThresholdLevelsMetric {
             gauges[i] = new LongGauge(config);
 
             try {
+                // 将各个阈值进行注册
                 DefaultMonitorRegistry.getInstance().register(gauges[i]);
             } catch (Throwable e) {
                 logger.warn("Cannot register metric {}", name, e);

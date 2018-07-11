@@ -46,6 +46,8 @@ import org.slf4j.LoggerFactory;
 /**
  * A <em>jersey</em> resource that handles operations for a particular instance.
  *
+ * 用于处理特定实例的操作的<em> jersey </ em>资源。
+ *
  * @author Karthik Ranganathan, Greg Kim
  *
  */
@@ -90,6 +92,8 @@ public class InstanceResource {
     /**
      * A put request for renewing lease from a client instance.
      *
+     * 从客户端实例续订租约的put请求。
+     *
      * @param isReplication
      *            a header parameter containing information whether this is
      *            replicated from other nodes.
@@ -109,19 +113,28 @@ public class InstanceResource {
             @QueryParam("status") String status,
             @QueryParam("lastDirtyTimestamp") String lastDirtyTimestamp) {
         boolean isFromReplicaNode = "true".equals(isReplication);
+        // -----------------------关键方法------------------------
+        // 续租
         boolean isSuccess = registry.renew(app.getName(), id, isFromReplicaNode);
 
         // Not found in the registry, immediately ask for a register
+        // 在注册表中找不到，立即要求注册
+        // 续租失败
         if (!isSuccess) {
             logger.warn("Not Found (Renew): {} - {}", app.getName(), id);
             return Response.status(Status.NOT_FOUND).build();
         }
+        // 比较 InstanceInfo 的 lastDirtyTimestamp 属性
         // Check if we need to sync based on dirty time stamp, the client
         // instance might have changed some value
         Response response = null;
         if (lastDirtyTimestamp != null && serverConfig.shouldSyncWhenTimestampDiffers()) {
+            // 最后更细时间戳不为空 && 同步应用实例信息
+            // ---------------------关键方法---------------------------
+            // 比较 lastDirtyTimestamp 的差异，如果不相同则返回404 409错误
             response = this.validateDirtyTimestamp(Long.valueOf(lastDirtyTimestamp), isFromReplicaNode);
             // Store the overridden status since the validation found out the node that replicates wins
+            // 存储重写状态，因为验证发现了复制获胜的节点
             if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()
                     && (overriddenStatus != null)
                     && !(InstanceStatus.UNKNOWN.name().equals(overriddenStatus))
@@ -129,6 +142,7 @@ public class InstanceResource {
                 registry.storeOverriddenStatusIfRequired(app.getAppName(), id, InstanceStatus.valueOf(overriddenStatus));
             }
         } else {
+            // 成功
             response = Response.ok().build();
         }
         logger.debug("Found (Renew): {} - {}; reply status={}", app.getName(), id, response.getStatus());
@@ -268,6 +282,8 @@ public class InstanceResource {
     /**
      * Handles cancellation of leases for this particular instance.
      *
+     * 处理此特定实例的租约取消。
+     *
      * @param isReplication
      *            a header parameter containing information whether this is
      *            replicated from other nodes.
@@ -278,17 +294,22 @@ public class InstanceResource {
     public Response cancelLease(
             @HeaderParam(PeerEurekaNode.HEADER_REPLICATION) String isReplication) {
         try {
+            // ------------------------------关键方法--------------------------
+            // 服务取消
             boolean isSuccess = registry.cancel(app.getName(), id,
                 "true".equals(isReplication));
 
             if (isSuccess) {
+                // 下线成功，返回200
                 logger.debug("Found (Cancel): {} - {}", app.getName(), id);
                 return Response.ok().build();
             } else {
+                // 服务没有找到，返回404
                 logger.info("Not Found (Cancel): {} - {}", app.getName(), id);
                 return Response.status(Status.NOT_FOUND).build();
             }
         } catch (Throwable e) {
+            // 出现异常，返回500
             logger.error("Error (cancel): {} - {}", app.getName(), id, e);
             return Response.serverError().build();
         }
@@ -297,12 +318,15 @@ public class InstanceResource {
 
     private Response validateDirtyTimestamp(Long lastDirtyTimestamp,
                                             boolean isReplication) {
+        // 获取 InstanceInfo
         InstanceInfo appInfo = registry.getInstanceByAppAndId(app.getName(), id, false);
         if (appInfo != null) {
             if ((lastDirtyTimestamp != null) && (!lastDirtyTimestamp.equals(appInfo.getLastDirtyTimestamp()))) {
                 Object[] args = {id, appInfo.getLastDirtyTimestamp(), lastDirtyTimestamp, isReplication};
 
                 if (lastDirtyTimestamp > appInfo.getLastDirtyTimestamp()) {
+                    // 意味着请求方( 可能是 Eureka-Client ，也可能是 Eureka-Server 集群内的其他 Server )
+                    // 存在 InstanceInfo 和 Eureka-Server 的 InstanceInfo 的数据不一致，返回 404 响应。请求方收到 404 响应后重新发起注册
                     logger.debug(
                             "Time to sync, since the last dirty timestamp differs -"
                                     + " ReplicationInstance id : {},Registry : {} Incoming: {} Replication: {}",
@@ -311,6 +335,8 @@ public class InstanceResource {
                 } else if (appInfo.getLastDirtyTimestamp() > lastDirtyTimestamp) {
                     // In the case of replication, send the current instance info in the registry for the
                     // replicating node to sync itself with this one.
+                    //在复制的情况下，在注册表中发送当前实例信息
+                    //复制节点以与此节点同步。
                     if (isReplication) {
                         logger.debug(
                                 "Time to sync, since the last dirty timestamp differs -"
@@ -318,12 +344,14 @@ public class InstanceResource {
                                 args);
                         return Response.status(Status.CONFLICT).entity(appInfo).build();
                     } else {
+                        // Server 的 lastDirtyTimestamp 较大，并且请求方为 Eureka-Client，续租成功，返回 200 成功响应。
                         return Response.ok().build();
                     }
                 }
             }
 
         }
+        // lastDirtyTimestamp 一致，返回 200 成功响应。
         return Response.ok().build();
     }
 }

@@ -10,6 +10,7 @@ import com.netflix.discovery.EurekaNamespace;
 
 /**
  * This provider is necessary because the namespace is optional.
+ * 此提供程序是必需的，因为命名空间是可选的
  * @author elandau
  */
 public class DefaultEurekaClientConfigProvider implements Provider<EurekaClientConfig> {
@@ -28,6 +29,7 @@ public class DefaultEurekaClientConfigProvider implements Provider<EurekaClientC
                     : new DefaultEurekaClientConfig(namespace);
                     
             // TODO: Remove this when DiscoveryManager is finally no longer used
+            // TODO: 当发现管理器终于不再使用时删除它
             DiscoveryManager.getInstance().setEurekaClientConfig(config);
         }
 

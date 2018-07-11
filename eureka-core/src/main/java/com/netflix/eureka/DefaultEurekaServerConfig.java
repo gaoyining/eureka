@@ -39,6 +39,9 @@ import org.slf4j.LoggerFactory;
 /**
  *
  * A default implementation of eureka server configuration as required by
+ *
+ * 根据需要的eureka服务器配置的默认实现
+ *
  * {@link EurekaServerConfig}.
  *
  * <p>
@@ -66,25 +69,63 @@ public class DefaultEurekaServerConfig implements EurekaServerConfig {
     private static final String EUREKA_ENVIRONMENT = "eureka.environment";
     private static final Logger logger = LoggerFactory
             .getLogger(DefaultEurekaServerConfig.class);
+    /**
+     * 配置文件对象
+     */
     private static final DynamicPropertyFactory configInstance = com.netflix.config.DynamicPropertyFactory
             .getInstance();
+    /**
+     * 配置文件
+     */
     private static final DynamicStringProperty EUREKA_PROPS_FILE = DynamicPropertyFactory
             .getInstance().getStringProperty("eureka.server.props",
                     "eureka-server");
     private static final int TIME_TO_WAIT_FOR_REPLICATION = 30000;
 
+    /**
+     * 命名空间
+     */
     private String namespace = "eureka.";
 
     // These counters are checked for each HTTP request. Instantiating them per request like for the other
     // properties would be too costly.
+    // 为每个HTTP请求检查这些计数器。 像其他请求一样为每个请求实例化它们
+    // 属性太重了。
+
+    /**
+     * 限速特权客户端
+     */
     private final DynamicStringSetProperty rateLimiterPrivilegedClients =
             new DynamicStringSetProperty(namespace + "rateLimiter.privilegedClients", Collections.<String>emptySet());
+
+    /**
+     * 已启用速率限制
+     */
     private final DynamicBooleanProperty rateLimiterEnabled = configInstance.getBooleanProperty(namespace + "rateLimiter.enabled", false);
+
+    /**
+     * 速率限制器节流阀标准客户端
+     */
     private final DynamicBooleanProperty rateLimiterThrottleStandardClients = configInstance.getBooleanProperty(namespace + "rateLimiter.throttleStandardClients", false);
+
+    /**
+     * 速率限制器突发大小
+     */
     private final DynamicIntProperty rateLimiterBurstSize = configInstance.getIntProperty(namespace + "rateLimiter.burstSize", 10);
+
+    /**
+     * 速率限制器注册表获取平均速率
+     */
     private final DynamicIntProperty rateLimiterRegistryFetchAverageRate = configInstance.getIntProperty(namespace + "rateLimiter.registryFetchAverageRate", 500);
+
+    /**
+     * 速率限制完全获取平均速率
+     */
     private final DynamicIntProperty rateLimiterFullFetchAverageRate = configInstance.getIntProperty(namespace + "rateLimiter.fullFetchAverageRate", 100);
 
+    /**
+     * 列表自动缩放角色组名称
+     */
     private final DynamicStringProperty listAutoScalingGroupsRoleName =
             configInstance.getStringProperty(namespace + "listAutoScalingGroupsRoleName", "ListAutoScalingGroups");
 
@@ -98,15 +139,18 @@ public class DefaultEurekaServerConfig implements EurekaServerConfig {
     }
 
     private void init() {
+        // 获得 eureka.environment ， 不存在设置为 test
         String env = ConfigurationManager.getConfigInstance().getString(
                 EUREKA_ENVIRONMENT, TEST);
         ConfigurationManager.getConfigInstance().setProperty(
                 ARCHAIUS_DEPLOYMENT_ENVIRONMENT, env);
 
+        // 获得properties，如果不存在设置为 eureka-server.properties
         String eurekaPropsFile = EUREKA_PROPS_FILE.get();
         try {
             // ConfigurationManager
             // .loadPropertiesFromResources(eurekaPropsFile);
+            // 加载配置文件
             ConfigurationManager
                     .loadCascadedPropertiesFromResources(eurekaPropsFile);
         } catch (IOException e) {
@@ -498,7 +542,7 @@ public class DefaultEurekaServerConfig implements EurekaServerConfig {
                 logger.error("Error reading eureka remote region urls from property {}. "
                                 + "Invalid entry {} for remote region url. The entry must contain region name and url "
                                 + "separated by a {}. Ignoring this entry.",
-                        new String[]{propName, remoteRegionUrlWithNamePair, pairSplitChar});
+                        new Object[]{propName, remoteRegionUrlWithNamePair, pairSplitChar});
             } else {
                 String regionName = pairSplit[0];
                 String regionUrl = pairSplit[1];
@@ -673,10 +717,5 @@ public class DefaultEurekaServerConfig implements EurekaServerConfig {
     public int getHealthStatusMinNumberOfAvailablePeers() {
         return configInstance.getIntProperty(
                 namespace + "minAvailableInstancesForPeerReplication", -1).get();
-    }
-
-    @Override
-    public int getInitialCapacityOfResponseCache() {
-        return configInstance.getIntProperty(namespace + "initialCapacityOfResponseCache", 1000).get();
     }
 }

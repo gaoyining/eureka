@@ -56,6 +56,8 @@ public class Jersey1TransportClientFactories implements TransportClientFactories
     public TransportClientFactory newTransportClientFactory(EurekaClientConfig clientConfig,
             Collection<ClientFilter> additionalFilters, InstanceInfo myInstanceInfo, Optional<SSLContext> sslContext,
             Optional<HostnameVerifier> hostnameVerifier) {
+        // ---------------------关键方法--------------------
+        // 创建eureka工厂
         final TransportClientFactory jerseyFactory = JerseyEurekaHttpClientFactory.create(
                 clientConfig,
                 additionalFilters,

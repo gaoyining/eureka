@@ -24,9 +24,13 @@ import com.netflix.discovery.shared.Applications;
  * registry information in case eureka clients are unable to retrieve this
  * information from any of the <em>eureka</em> servers.
  *
+ * 备份注册中心接口。当 Eureka-Client 启动时，无法从 Eureka-Server 读取注册信息（可能挂了），从备份注册中心读取注册信息
+ *
  * <p>
  * This is normally not required, but for applications that cannot exist without
  * the registry information it can provide some additional reslience.
+ *
+ * 这通常不是必需的，但对于没有注册表信息而不能存在的应用程序，它可以提供一些额外的响应。
  * </p>
  *
  * @author Karthik Ranganathan

@@ -63,7 +63,9 @@ public class RateLimiter {
     }
 
     public boolean acquire(int burstSize, long averageRate, long currentTimeMillis) {
-        if (burstSize <= 0 || averageRate <= 0) { // Instead of throwing exception, we just let all the traffic go
+        if (burstSize <= 0 || averageRate <= 0) {
+            // Instead of throwing exception, we just let all the traffic go
+            // 而不是抛出异常，我们只是让所有的流量都去了
             return true;
         }
 

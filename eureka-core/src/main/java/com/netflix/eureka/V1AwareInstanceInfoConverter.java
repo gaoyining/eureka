@@ -25,6 +25,8 @@ import com.netflix.eureka.resources.CurrentRequestVersion;
  * Support for {@link Version#V1}. {@link Version#V2} introduces a new status
  * {@link InstanceStatus#OUT_OF_SERVICE}.
  *
+ * 支持{@link Version＃V1}。 {@link Version＃V2}引入了新状态{@link InstanceStatus＃OUT_OF_SERVICE}。
+ *
  * @author Karthik Ranganathan, Greg Kim
  *
  */

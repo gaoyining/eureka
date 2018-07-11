@@ -27,3 +27,7 @@ war {
 
 // Integration test loads eureka war, so it must be ready prior to running tests
 test.dependsOn war
+
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+}

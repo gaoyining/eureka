@@ -51,6 +51,14 @@ import static com.netflix.discovery.EurekaClientNames.METRIC_TRANSPORT_PREFIX;
  * If 5xx status code is returned, {@link ServerStatusEvaluator} predicate evaluates if the retries should be
  * retried on another server, or the response with this status code returned to the client.
  *
+ * {@link RetryableEurekaHttpClient}在集群中的后续服务器上重试失败的请求。
+ * 它还维护简单的隔离列表，因此不会在目前无法访问的服务器上再次重试操作。
+ * <h3>隔离</ h3>所有服务器到 哪些通讯失败被列入检疫清单。
+ * 首次成功执行会清除此列表，这使得这些服务器有资格提供未来请求。
+ * 一旦所有可用服务器都耗尽，该列表也会被清除。
+ * <h3> 5xx </ h3>如果返回5xx状态代码，
+ * {@link ServerStatusEvaluator}谓词将评估是否应在另一台服务器上重试重试，或者是否具有此状态的响应 代码返回给客户端。
+ *
  * @author Tomasz Bak
  * @author Li gang
  */

@@ -30,6 +30,8 @@ import com.netflix.servo.monitor.Monitors;
 /**
  * The enum that encapsulates all statistics monitored by Eureka.
  *
+ * 枚举包含Eureka监控的所有统计信息。
+ *
  * <p>
  * Eureka Monitoring is done using <a href="https://github.com/Netflix/servo">Servo</a>. The
  * users who wants to take advantage of the monitoring should read up on
@@ -105,6 +107,8 @@ public enum EurekaMonitors {
      * because of replication from other eureka servers or it is a eureka client
      * initiated action.
      *
+     * 根据是否是因为来自其他eureka服务器的复制或者是eureka客户端启动的操作，递增给定统计信息的计数器。
+     *
      * @param isReplication
      *            true if this a replication, false otherwise.
      */
@@ -167,6 +171,8 @@ public enum EurekaMonitors {
 
     /**
      * Register all statistics with <tt>Servo</tt>.
+     *
+     * 使用<tt> Servo </ tt>注册所有统计数据。
      */
     public static void registerAllStats() {
         for (EurekaMonitors c : EurekaMonitors.values()) {

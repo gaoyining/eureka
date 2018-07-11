@@ -128,7 +128,7 @@ public class ResponseCacheImpl implements ResponseCache {
 
         long responseCacheUpdateIntervalMs = serverConfig.getResponseCacheUpdateIntervalMs();
         this.readWriteCacheMap =
-                CacheBuilder.newBuilder().initialCapacity(serverConfig.getInitialCapacityOfResponseCache())
+                CacheBuilder.newBuilder().initialCapacity(1000)
                         .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)
                         .removalListener(new RemovalListener<Key, Value>() {
                             @Override
@@ -236,6 +236,8 @@ public class ResponseCacheImpl implements ResponseCache {
 
     /**
      * Invalidate the cache of a particular application.
+     *
+     * 使特定应用程序的缓存无效。
      *
      * @param appName the application name of the application.
      */

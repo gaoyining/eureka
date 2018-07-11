@@ -24,11 +24,17 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
 /**
  * Represents the <em>lease</em> information with <em>Eureka</em>.
  *
+ * 使用<em> Eureka </ em>表示<em>租约</ em>信息。
+ *
  * <p>
  * <em>Eureka</em> decides to remove the instance out of its view depending on
  * the duration that is set in
  * {@link EurekaInstanceConfig#getLeaseExpirationDurationInSeconds()} which is
  * held in this lease. The lease also tracks the last time it was renewed.
+ *
+ * <em> Eureka </ em>决定将视图中的实例移除，具体取决于此租约中保存的
+ * {@link EurekaInstanceConfig＃getLeaseExpirationDurationInSeconds（）}
+ * 中设置的持续时间。 租约还追踪上次更新的时间。
  * </p>
  *
  * @author Karthik Ranganathan, Greg Kim
@@ -132,6 +138,8 @@ public class LeaseInfo {
         /**
          * Sets the client specified setting for renew interval.
          *
+         * 为续订间隔设置客户端指定的设置。
+         *
          * @param i
          *            the time interval with which the renewals will be renewed.
          * @return the {@link LeaseInfo} builder.
@@ -228,6 +236,8 @@ public class LeaseInfo {
     /**
      * Returns client specified setting for renew interval.
      *
+     * 返回客户端指定的续订间隔设置。
+     *
      * @return time in milliseconds since epoch.
      */
     public int getRenewalIntervalInSecs() {
@@ -237,6 +247,8 @@ public class LeaseInfo {
     /**
      * Returns client specified setting for eviction (e.g. how long to wait w/o
      * renewal event)
+     *
+     * 返回客户指定的移除设置（例如，等待更新事件需要多长时间）
      *
      * @return time in milliseconds since epoch.
      */

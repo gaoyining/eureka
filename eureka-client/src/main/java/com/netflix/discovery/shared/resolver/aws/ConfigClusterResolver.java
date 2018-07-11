@@ -14,6 +14,8 @@ import java.util.Map;
 /**
  * A resolver that on-demand resolves from configuration what the endpoints should be.
  *
+ * 一个解析器，按需解析配置端点应该是什么。
+ *
  * @author David Liu
  */
 public class ConfigClusterResolver implements ClusterResolver<AwsEndpoint> {
@@ -34,13 +36,18 @@ public class ConfigClusterResolver implements ClusterResolver<AwsEndpoint> {
 
     @Override
     public List<AwsEndpoint> getClusterEndpoints() {
+        // 是否使用dns解析服务地址
         if (clientConfig.shouldUseDnsForFetchingServiceUrls()) {
+            // 使用
             if (logger.isInfoEnabled()) {
                 logger.info("Resolving eureka endpoints via DNS: {}", getDNSName());
             }
             return getClusterEndpointsFromDns();
         } else {
+            // 不使用
             logger.info("Resolving eureka endpoints via configuration");
+            // ------------------------关键方法-------------------------
+            // 从配置中获取群集端点
             return getClusterEndpointsFromConfig();
         }
     }
@@ -72,6 +79,8 @@ public class ConfigClusterResolver implements ClusterResolver<AwsEndpoint> {
         String[] availZones = clientConfig.getAvailabilityZones(clientConfig.getRegion());
         String myZone = InstanceInfo.getZone(availZones, myInstanceInfo);
 
+        // ---------------------------关键方法--------------------------------
+        // 从配置中获取群集端点
         Map<String, List<String>> serviceUrls = EndpointUtils
                 .getServiceUrlsMapFromConfig(clientConfig, myZone, clientConfig.shouldPreferSameZoneEureka());
 

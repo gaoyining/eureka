@@ -38,6 +38,8 @@ import static com.netflix.discovery.PropertyBasedClientConfigConstants.*;
  * A default implementation of eureka client configuration as required by
  * {@link EurekaClientConfig}.
  *
+ * {@link EurekaClientConfig}所要求的eureka客户端配置的默认实现。
+ *
  * <p>
  * The information required for configuring eureka client is provided in a
  * configuration file.The configuration file is searched for in the classpath
@@ -62,13 +64,22 @@ public class DefaultEurekaClientConfig implements EurekaClientConfig {
 
     /**
      * @deprecated 2016-08-29 use {@link com.netflix.discovery.CommonConstants#DEFAULT_CONFIG_NAMESPACE}
+     *
+     * 命名空间
      */
     @Deprecated
     public static final String DEFAULT_NAMESPACE = CommonConstants.DEFAULT_CONFIG_NAMESPACE + ".";
     public static final String DEFAULT_ZONE = "defaultZone";
 
     private final String namespace;
+
+    /**
+     * 配置文件对象
+     */
     private final DynamicPropertyFactory configInstance;
+    /**
+     * HTTP 传输配置
+     */
     private final EurekaTransportConfig transportConfig;
 
     public DefaultEurekaClientConfig() {
@@ -76,11 +87,15 @@ public class DefaultEurekaClientConfig implements EurekaClientConfig {
     }
 
     public DefaultEurekaClientConfig(String namespace) {
+        // 设置 namespace，为 "." 结尾
         this.namespace = namespace.endsWith(".")
                 ? namespace
                 : namespace + ".";
 
+        // -------------------------关键方法----------------------
+        // 初始化 配置文件对象
         this.configInstance = Archaius1Utils.initConfig(CommonConstants.CONFIG_FILE_NAME);
+        // 创建 HTTP 传输配置
         this.transportConfig = new DefaultEurekaTransportConfig(namespace, configInstance);
     }
 
@@ -359,7 +374,7 @@ public class DefaultEurekaClientConfig implements EurekaClientConfig {
     }
 
     /*
-     * (non-Javadoc)
+     * (non-Javadoc)８９
      *
      * @see com.netflix.discovery.EurekaClientConfig#getAvailabilityZones()
      */

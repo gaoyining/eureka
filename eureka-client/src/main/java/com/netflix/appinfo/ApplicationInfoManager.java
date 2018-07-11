@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
  * The class that initializes information required for registration with
  * <tt>Eureka Server</tt> and to be discovered by other components.
  *
+ * 初始化向Eureka Server 注册并被其他组件发现的信息的类。
+ *
  * <p>
  * The information required for registration is provided by the user by passing
  * the configuration defined by the contract in {@link EurekaInstanceConfig}
@@ -55,12 +57,29 @@ public class ApplicationInfoManager {
         }
     };
 
+    /**
+     * 单例
+     */
     private static ApplicationInfoManager instance = new ApplicationInfoManager(null, null, null);
 
+    /**
+     * 状态变更监听器
+     */
     protected final Map<String, StatusChangeListener> listeners;
+
+    /**
+     * 应用实例状态匹配
+     */
     private final InstanceStatusMapper instanceStatusMapper;
 
+    /**
+     * 应用实例信息
+     */
     private InstanceInfo instanceInfo;
+
+    /**
+     * 应用实例配置
+     */
     private EurekaInstanceConfig config;
 
     public static class OptionalArgs {
@@ -79,6 +98,8 @@ public class ApplicationInfoManager {
     /**
      * public for DI use. This class should be in singleton scope so do not create explicitly.
      * Either use DI or create this explicitly using one of the other public constructors.
+     *
+     * 公众的DI使用。 这个类应该在单例作用域中，所以不要显式创建。 使用DI或使用其他公共构造函数之一显式创建它。
      */
     @Inject
     public ApplicationInfoManager(EurekaInstanceConfig config, InstanceInfo instanceInfo, OptionalArgs optionalArgs) {
@@ -92,6 +113,7 @@ public class ApplicationInfoManager {
         }
 
         // Hack to allow for getInstance() to use the DI'd ApplicationInfoManager
+        // Hack允许getInstance（）使用DI'd ApplicationInfoManager
         instance = this;
     }
 
@@ -130,6 +152,7 @@ public class ApplicationInfoManager {
 
     /**
      * Gets the information about this instance that is registered with eureka.
+     * 获取有关使用eureka注册的此实例的信息。
      *
      * @return information about this instance that is registered with eureka.
      */
@@ -162,6 +185,9 @@ public class ApplicationInfoManager {
      * whether it is ready to receive traffic. Setting the status here also notifies all registered listeners
      * of a status change event.
      *
+     * 设置此实例的状态。 应用程序可以使用它来指示它是否已准备好接收流量。
+     * 在此处设置状态还会通知所有已注册的侦听器状态更改事件。
+     *
      * @param status Status of the instance
      */
     public synchronized void setInstanceStatus(InstanceStatus status) {
@@ -174,6 +200,8 @@ public class ApplicationInfoManager {
         if (prev != null) {
             for (StatusChangeListener listener : listeners.values()) {
                 try {
+                    // ---------------------关键方法---------------------
+                    // 执行
                     listener.notify(new StatusChangeEvent(prev, next));
                 } catch (Exception e) {
                     logger.warn("failed to notify listener: {}", listener.getId(), e);
@@ -195,6 +223,10 @@ public class ApplicationInfoManager {
      * <code>DataCenterInfo</code> is refetched and passed on to the eureka
      * server on next heartbeat.
      *
+     * 重新获取主机名以检查其是否已更改。 如果它有，整个
+     * <code> DataCenterInfo </ code>被重新获取并传递给eureka
+     * 下一次心跳的服务器。
+     *
      * see {@link InstanceInfo#getHostName()} for explanation on why the hostname is used as the default address
      */
     public void refreshDataCenterInfoIfRequired() {
@@ -203,6 +235,7 @@ public class ApplicationInfoManager {
         String newAddress;
         if (config instanceof RefreshableInstanceConfig) {
             // Refresh data center info, and return up to date address
+            // 刷新数据中心信息，并返回最新地址
             newAddress = ((RefreshableInstanceConfig) config).resolveDefaultAddress(true);
         } else {
             newAddress = config.getHostName(true);
@@ -215,25 +248,34 @@ public class ApplicationInfoManager {
             // :( in the legacy code here the builder is acting as a mutator.
             // This is hard to fix as this same instanceInfo instance is referenced elsewhere.
             // We will most likely re-write the client at sometime so not fixing for now.
+            // :(在遗留代码中，构建器充当了mutator。
+            // 这很难解决，因为在其他地方引用了相同的instanceInfo实例。
+            // 我们很可能会在某个时候重新编写客户端，所以暂时不修复。
             InstanceInfo.Builder builder = new InstanceInfo.Builder(instanceInfo);
             builder.setHostName(newAddress).setIPAddr(newIp).setDataCenterInfo(config.getDataCenterInfo());
+            // 设置 需要更新
             instanceInfo.setIsDirty();
         }
     }
 
     public void refreshLeaseInfoIfRequired() {
+        // 获得租约信息
         LeaseInfo leaseInfo = instanceInfo.getLeaseInfo();
         if (leaseInfo == null) {
             return;
         }
+        // 租约过期时间，单位：秒
         int currentLeaseDuration = config.getLeaseExpirationDurationInSeconds();
+        // 租约续约频率，单位：秒。
         int currentLeaseRenewal = config.getLeaseRenewalIntervalInSeconds();
         if (leaseInfo.getDurationInSecs() != currentLeaseDuration || leaseInfo.getRenewalIntervalInSecs() != currentLeaseRenewal) {
+            // 客户端实例指定的移除设置 != config租约过期时间 ||  客户端实例指定的续订间隔设置 != config租约续约频率
             LeaseInfo newLeaseInfo = LeaseInfo.Builder.newBuilder()
                     .setRenewalIntervalInSecs(currentLeaseRenewal)
                     .setDurationInSecs(currentLeaseDuration)
                     .build();
             instanceInfo.setLeaseInfo(newLeaseInfo);
+            // 设置需要更新
             instanceInfo.setIsDirty();
         }
     }
@@ -249,6 +291,8 @@ public class ApplicationInfoManager {
         /**
          * given a starting {@link com.netflix.appinfo.InstanceInfo.InstanceStatus}, apply a mapping to return
          * the follow up status, if applicable.
+         *
+         * 给出一个起始{@link com.netflix.appinfo.InstanceInfo.InstanceStatus}，应用映射以返回后续状态（如果适用）。
          *
          * @return the mapped instance status, or null if the mapping is not applicable.
          */

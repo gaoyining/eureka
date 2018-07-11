@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.netflix.appinfo.AbstractEurekaIdentity;
-import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.converters.jackson.EurekaJsonJacksonCodec;
 import com.netflix.discovery.shared.Application;
 import com.netflix.discovery.shared.Applications;
@@ -150,12 +149,6 @@ public class MockRemoteEurekaServer extends ExternalResource {
                     sendOkResponseWithContent((Request) request, response, toJson(apps));
                     handled = true;
                     sentDelta = true;
-                } else if (request.getMethod().equals("PUT") && pathInfo.startsWith("apps")) {
-                    InstanceInfo instanceInfo = InstanceInfo.Builder.newBuilder()
-                        .setAppName("TEST-APP").build();
-                    sendOkResponseWithContent((Request) request, response,
-                        new EurekaJsonJacksonCodec().getObjectMapper(Applications.class).writeValueAsString(instanceInfo));
-                    handled = true;
                 } else if (pathInfo.startsWith("apps")) {
                     Applications apps = new Applications();
                     for (Application application : applicationMap.values()) {

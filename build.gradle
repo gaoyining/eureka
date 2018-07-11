@@ -74,3 +74,11 @@ subprojects {
     }
 }
 
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+//指定编译的编码
+tasks.withType(Javadoc) {
+    options.encoding = "UTF-8"
+}

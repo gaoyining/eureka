@@ -18,6 +18,8 @@ import com.netflix.servo.monitor.MonitorConfig;
 
 /**
  * An auth filter for client requests. For now, it only logs supported client identification data from header info
+ *
+ * 客户端请求的身份验证过滤器。 目前，它仅从标头信息中记录支持的客户端标识数据
  */
 @Singleton
 public class ServerRequestAuthFilter implements Filter {
@@ -58,6 +60,7 @@ public class ServerRequestAuthFilter implements Filter {
     }
 
     protected void logAuth(ServletRequest request) {
+        // 打印访问的客户端名和版本号，配合 Netflix Servo 实现监控信息采集。
         if (serverConfig.shouldLogIdentityHeaders()) {
             if (request instanceof HttpServletRequest) {
                 HttpServletRequest httpRequest = (HttpServletRequest) request;

@@ -18,6 +18,7 @@ package com.netflix.discovery.shared.transport;
 
 /**
  * A top level factory to create http clients for application/eurekaClient use
+ * 一个顶级工厂，用于为application / eurekaClient使用创建http客户端
  *
  * @author Tomasz Bak
  */

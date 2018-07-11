@@ -25,14 +25,28 @@ import org.slf4j.LoggerFactory;
 /**
  * Utility class for getting a count in last X milliseconds.
  *
+ * 用于获取最后X毫秒计数的实用程序类。
+ *
  * @author Karthik Ranganathan,Greg Kim
  */
 public class MeasuredRate {
     private static final Logger logger = LoggerFactory.getLogger(MeasuredRate.class);
+    /**
+     * 上一个间隔次数
+     */
     private final AtomicLong lastBucket = new AtomicLong(0);
+    /**
+     * 当前间隔次数
+     */
     private final AtomicLong currentBucket = new AtomicLong(0);
 
+    /**
+     * 间隔
+     */
     private final long sampleInterval;
+    /**
+     * 定时器
+     */
     private final Timer timer;
 
     private volatile boolean isActive;
@@ -48,12 +62,14 @@ public class MeasuredRate {
 
     public synchronized void start() {
         if (!isActive) {
+            // isActive初始化为false
             timer.schedule(new TimerTask() {
 
                 @Override
                 public void run() {
                     try {
                         // Zero out the current bucket.
+                        // 将当前桶归零。
                         lastBucket.set(currentBucket.getAndSet(0));
                     } catch (Throwable e) {
                         logger.error("Cannot reset the Measured Rate", e);
@@ -74,6 +90,8 @@ public class MeasuredRate {
 
     /**
      * Returns the count in the last sample interval.
+     *
+     * 返回上一个采样间隔中的计数。
      */
     public long getCount() {
         return lastBucket.get();

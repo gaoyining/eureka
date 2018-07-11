@@ -3,6 +3,8 @@ package com.netflix.appinfo;
 /**
  * constants pertaining to property based instance configs
  *
+ * 与基于属性的实例配置有关的常量
+ *
  * @author David Liu
  */
 final class PropertyBasedInstanceConfigConstants {

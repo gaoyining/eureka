@@ -50,9 +50,19 @@ import org.slf4j.LoggerFactory;
  * and if not served my result in following full registry fetch from the client, they have relatively
  * higher priority. This is implemented by two parallel rate limiters, one for overall number of
  * full/delta fetches (higher threshold) and one for full fetches only (low threshold).
+ *
+ * 速率限制过滤器，具有可配置的阈值，超过该阈值将删除非特权客户端。
+ * 此功能可在系统过载时切断非标准和潜在有害的客户端。
+ * 由于始终允许客户端注册和心跳进入系统（同时是相对便宜的操作）至关重要，因此速率限制仅适用于完整和增量注册表提取。
+ * 此外，由于增量提取远小于完全提取，并且如果没有提供服务，我的结果是从客户端获取完整的注册表提取，
+ * 它们具有相对较高的优先级。 这是由两个并行速率限制器实现的，
+ * 一个用于完整/增量读取的总数（更高的阈值），一个用于仅完全提取（低阈值）。
+ *
  * <p>
  * The client is identified by {@link AbstractEurekaIdentity#AUTH_NAME_HEADER_KEY} HTTP header
  * value. The privileged group by default contains:
+ *
+ * 客户端由{@link AbstractEurekaIdentity＃AUTH_NAME_HEADER_KEY} HTTP标头值标识。 默认情况下，特权组包含：
  * <ul>
  * <li>
  *     {@link EurekaClientIdentity#DEFAULT_CLIENT_NAME} - standard Java eureka-client. Applications using

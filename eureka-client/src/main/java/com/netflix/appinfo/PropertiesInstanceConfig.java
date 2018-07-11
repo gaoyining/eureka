@@ -30,6 +30,8 @@ import static com.netflix.appinfo.PropertyBasedInstanceConfigConstants.*;
 /**
  * A properties based {@link InstanceInfo} configuration.
  *
+ * 基于属性的{@link InstanceInfo}配置。
+ *
  * <p>
  * The information required for registration with eureka server is provided in a
  * configuration file.The configuration file is searched for in the classpath
@@ -50,8 +52,18 @@ import static com.netflix.appinfo.PropertyBasedInstanceConfigConstants.*;
  */
 public abstract class PropertiesInstanceConfig extends AbstractInstanceConfig implements EurekaInstanceConfig {
 
+    /**
+     * 命名空间
+     */
     protected final String namespace;
+    /**
+     * 配置文件对象
+     */
     protected final DynamicPropertyFactory configInstance;
+    /**
+     * 应用分组
+     * 从 环境变量 获取
+     */
     private String appGrpNameFromEnv;
 
     public PropertiesInstanceConfig() {
@@ -70,13 +82,18 @@ public abstract class PropertiesInstanceConfig extends AbstractInstanceConfig im
     public PropertiesInstanceConfig(String namespace, DataCenterInfo info) {
         super(info);
 
+        // 设置 namespace，为 "." 结尾
         this.namespace = namespace.endsWith(".")
                 ? namespace
                 : namespace + ".";
 
+        // ---------------------关键方法-------------------
+        // 获取当前系统范围的配置。 如果尚未设置，它将返回一个默认的{@link ConcurrentCompositeConfiguration}，
+        // 其中包含来自Apache Commons Configuration的一个SystemConfiguration和一个DynamicLink配置。
         appGrpNameFromEnv = ConfigurationManager.getConfigInstance()
                 .getString(FALLBACK_APP_GROUP_KEY, Values.UNKNOWN_APPLICATION);
 
+        // 获取一个可变的Properties工厂，声明为eureka-client
         this.configInstance = Archaius1Utils.initConfig(CommonConstants.CONFIG_FILE_NAME);
     }
 
@@ -139,6 +156,10 @@ public abstract class PropertiesInstanceConfig extends AbstractInstanceConfig im
      * com.netflix.appinfo.AbstractInstanceConfig#getLeaseRenewalIntervalInSeconds
      * ()
      */
+
+    /**
+     * 在几秒钟内获得租赁更新间隔
+     */
     @Override
     public int getLeaseRenewalIntervalInSeconds() {
         return configInstance.getIntProperty(namespace + LEASE_RENEWAL_INTERVAL_KEY,
@@ -150,6 +171,10 @@ public abstract class PropertiesInstanceConfig extends AbstractInstanceConfig im
      *
      * @see com.netflix.appinfo.AbstractInstanceConfig#
      * getLeaseExpirationDurationInSeconds()
+     */
+
+    /**
+     * 以秒为单位获得租约到期时间
      */
     @Override
     public int getLeaseExpirationDurationInSeconds() {

@@ -42,3 +42,4 @@ The same as the ExampleEurekaService, where Governator/Guice is used to initiali
 
 ### ExampleEurekaClient
 An example use case of the eureka client to find a particular application/vip (in this case the example service) via eureka for communication.
+

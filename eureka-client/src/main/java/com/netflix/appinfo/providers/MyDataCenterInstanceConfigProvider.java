@@ -25,6 +25,7 @@ public class MyDataCenterInstanceConfigProvider implements Provider<EurekaInstan
             }
 
             // TODO: Remove this when DiscoveryManager is finally no longer used
+            // TODO: 当发现管理器终于不再使用时删除它
             DiscoveryManager.getInstance().setEurekaInstanceConfig(config);
         }
         return config;

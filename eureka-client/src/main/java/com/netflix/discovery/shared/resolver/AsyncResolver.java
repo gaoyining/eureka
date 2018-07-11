@@ -32,6 +32,9 @@ public class AsyncResolver<T extends EurekaEndpoint> implements ClosableResolver
 
     // Note that warm up is best effort. If the resolver is accessed by multiple threads pre warmup,
     // only the first thread will block for the warmup (up to the configurable timeout).
+
+    //注意，热身是最好的努力。 如果解压缩程序由多个线程预访问，
+    //只有第一个线程会阻塞热身（直到可配置的超时）。
     private final AtomicBoolean warmedUp = new AtomicBoolean(false);
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
 
@@ -51,6 +54,8 @@ public class AsyncResolver<T extends EurekaEndpoint> implements ClosableResolver
     /**
      * Create an async resolver with an empty initial value. When this resolver is called for the first time,
      * an initial warm up will be executed before scheduling the periodic update task.
+     *
+     * 创建一个空的初始值的异步解析程序。 当第一次调用此解析程序时，将在调度定期更新任务之前执行初始准备。
      */
     public AsyncResolver(String name,
                          ClusterResolver<T> delegate,
@@ -71,6 +76,9 @@ public class AsyncResolver<T extends EurekaEndpoint> implements ClosableResolver
      * Create an async resolver with a preset initial value. WHen this resolver is called for the first time,
      * there will be no warm up and the initial value will be returned. The periodic update task will not be
      * scheduled until after the first time getClusterEndpoints call.
+     *
+     * 创建具有预设初始值的异步解析程序。 当第一次调用此解析器时，将不会准备并返回初始值。
+     * 直到第一次调用getClusterEndpoints之后才会安排定期更新任务。
      */
     public AsyncResolver(String name,
                          ClusterResolver<T> delegate,
@@ -90,11 +98,11 @@ public class AsyncResolver<T extends EurekaEndpoint> implements ClosableResolver
     }
 
     /**
-     * @param delegate the delegate resolver to async resolve from
-     * @param initialValue the initial value to use
-     * @param executorThreadPoolSize the max number of threads for the threadpool
-     * @param refreshIntervalMs the async refresh interval
-     * @param warmUpTimeoutMs the time to wait for the initial warm up
+     * @param delegate the delegate resolver to async resolve from 委托解析器到异步解析
+     * @param initialValue the initial value to use 要使用的初始值
+     * @param executorThreadPoolSize the max number of threads for the threadpool 线程池的最大线程数
+     * @param refreshIntervalMs the async refresh interval 异步刷新间隔
+     * @param warmUpTimeoutMs the time to wait for the initial warm up 是时候等待最初的准备了
      */
     AsyncResolver(String name,
                   ClusterResolver<T> delegate,

@@ -26,6 +26,13 @@ import com.netflix.discovery.shared.transport.jersey.EurekaJerseyClientImpl;
  * and
  * {@link EurekaJerseyClientImpl.EurekaJerseyClientBuilder#withEncoderWrapper(EncoderWrapper)}
  *
+ * 在支持多个编解码器的过渡期间，这只是一个辅助类。 有一天，当每种只有一种类型的json和xml编解码器时，这一切都会消失。
+ *
+ * 要将自定义编解码器添加到Discovery，更喜欢创建自定义EurekaJerseyClient，
+ * 以完全独立地添加到DiscoveryClient，
+ * 或者通过{@link EurekaJerseyClientImpl.EurekaJerseyClientBuilder #withDecoderWrapper（DecoderWrapper）}
+ * 和{@link EurekaJerseyClientImpl.EurekaJerseyClientBuilder #withEncoderWrapper（EncoderWrapper）}
+ *
  * @author David Liu
  */
 public final class CodecWrappers {
@@ -39,6 +46,12 @@ public final class CodecWrappers {
         CODECS.put(wrapper.codecName(), wrapper);
     }
 
+    /**
+     * 获得类的简写名称
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     public static <T extends CodecWrapperBase> String getCodecName(Class<T> clazz) {
         return clazz.getSimpleName();
     }
@@ -53,6 +66,8 @@ public final class CodecWrappers {
         }
 
         if (!CODECS.containsKey(name)) {
+            // ------------------------关键方法--------------------
+            // 创建编码解析器
             CodecWrapper wrapper = create(name);
             if (wrapper != null) {
                 CODECS.put(wrapper.codecName(), wrapper);
@@ -72,6 +87,8 @@ public final class CodecWrappers {
         }
 
         if (!CODECS.containsKey(name)) {
+            // ------------------------关键方法--------------------
+            // 创建编码解析器
             CodecWrapper wrapper = create(name);
             if (wrapper != null) {
                 CODECS.put(wrapper.codecName(), wrapper);

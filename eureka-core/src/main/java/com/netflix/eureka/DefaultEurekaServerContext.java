@@ -32,16 +32,33 @@ import javax.inject.Singleton;
  * Represent the local server context and exposes getters to components of the
  * local server such as the registry.
  *
+ * 表示本地服务器上下文，并将getter公开给本地服务器的组件，例如注册表。
+ *
  * @author David Liu
  */
 @Singleton
 public class DefaultEurekaServerContext implements EurekaServerContext {
     private static final Logger logger = LoggerFactory.getLogger(DefaultEurekaServerContext.class);
 
+    /**
+     * Eureka-Server 配置
+     */
     private final EurekaServerConfig serverConfig;
+    /**
+     * Eureka-Server 请求和响应编解码器
+     */
     private final ServerCodecs serverCodecs;
+    /**
+     * 应用实例信息的注册表
+     */
     private final PeerAwareInstanceRegistry registry;
+    /**
+     * Eureka-Server 集群节点集合
+     */
     private final PeerEurekaNodes peerEurekaNodes;
+    /**
+     * 应用实例信息管理器
+     */
     private final ApplicationInfoManager applicationInfoManager;
 
     @Inject
@@ -61,8 +78,12 @@ public class DefaultEurekaServerContext implements EurekaServerContext {
     @Override
     public void initialize() {
         logger.info("Initializing ...");
+        // ---------------------关键方法-----------------------
+        // 启动 Eureka-Server 集群节点集合（复制）
         peerEurekaNodes.start();
         try {
+            // ---------------------关键方法-----------------------
+            // 初始化 应用实例信息的注册表
             registry.init(peerEurekaNodes);
         } catch (Exception e) {
             throw new RuntimeException(e);

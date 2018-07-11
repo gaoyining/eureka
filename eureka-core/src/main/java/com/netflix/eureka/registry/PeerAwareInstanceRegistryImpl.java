@@ -64,9 +64,13 @@ import javax.inject.Singleton;
  * Handles replication of all operations to {@link AbstractInstanceRegistry} to peer
  * <em>Eureka</em> nodes to keep them all in sync.
  *
+ * 处理所有操作到{@link AbstractInstanceRegistry}的复制到对等<em> Eureka </ em>节点，以使它们保持同步。
+ *
  * <p>
  * Primary operations that are replicated are the
  * <em>Registers,Renewals,Cancels,Expirations and Status Changes</em>
+ *
+ * 复制的主要操作是<em>注册，续订，取消，过期和状态更改</ em>
  * </p>
  *
  * <p>
@@ -114,6 +118,9 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
         }
     };
 
+    /**
+     * 最后一次复制次数
+     */
     private final MeasuredRate numberOfReplicationsLastMin;
 
     protected final EurekaClient eurekaClient;
@@ -132,10 +139,18 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
             EurekaClient eurekaClient
     ) {
         super(serverConfig, clientConfig, serverCodecs);
+        /**
+         * eureka客户端
+         */
         this.eurekaClient = eurekaClient;
+        /**
+         * 用于获取最后X毫秒计数的实用程序类。
+         */
         this.numberOfReplicationsLastMin = new MeasuredRate(1000 * 60 * 1);
         // We first check if the instance is STARTING or DOWN, then we check explicit overrides,
         // then we check the status of a potentially existing lease.
+        // 我们首先检查实例是STARTING还是DOWN，然后检查显式覆盖，
+        // 然后我们检查可能存在的租约的状态。
         this.instanceStatusOverrideRule = new FirstMatchWinsCompositeRule(new DownOrStartingRule(),
                 new OverrideExistsRule(overriddenInstanceStatusMap), new LeaseExistsRule());
     }
@@ -147,9 +162,15 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
 
     @Override
     public void init(PeerEurekaNodes peerEurekaNodes) throws Exception {
+        // ------------------关键方法------------------
+        // 最后一次复制次数开始
         this.numberOfReplicationsLastMin.start();
         this.peerEurekaNodes = peerEurekaNodes;
+        // ------------------关键方法------------------
+        // 初始化响应缓存
         initializedResponseCache();
+        // ------------------关键方法------------------
+        // 执行续约更新任务
         scheduleRenewalThresholdUpdateTask();
         initRemoteRegionRegistry();
 
@@ -185,6 +206,9 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      * The renewal threshold would be used to determine if the renewals drop
      * dramatically because of network partition and to protect expiring too
      * many instances at a time.
+     *
+     * 安排定期更新<em>续订阈值</ em>的任务。
+     * 更新阈值将用于确定续订是否因网络分区而急剧下降，并且一次保护过期的实例过多。
      *
      */
     private void scheduleRenewalThresholdUpdateTask() {
@@ -233,9 +257,15 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
         return count;
     }
 
+    /**
+     *
+     * @param applicationInfoManager
+     * @param count 拉取的注册数
+     */
     @Override
     public void openForTraffic(ApplicationInfoManager applicationInfoManager, int count) {
         // Renewals happen every 30 seconds and for a minute it should be a factor of 2.
+        // 续订每30秒发生一次，它应该是2的因子。
         this.expectedNumberOfRenewsPerMin = count * 2;
         this.numberOfRenewsPerMinThreshold =
                 (int) (this.expectedNumberOfRenewsPerMin * serverConfig.getRenewalPercentThreshold());
@@ -253,6 +283,8 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
         }
         logger.info("Changing status to UP");
         applicationInfoManager.setInstanceStatus(InstanceStatus.UP);
+        // -----------------------关键方法--------------------
+        // 执行相关定时
         super.postInit();
     }
 
@@ -375,11 +407,16 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
     @Override
     public boolean cancel(final String appName, final String id,
                           final boolean isReplication) {
+        // ----------------------关键方法-----------------------------
+        // 服务下线
         if (super.cancel(appName, id, isReplication)) {
+            // ----------------------关键方法-----------------------------
+            // Eureka-Server 复制
             replicateToPeers(Action.Cancel, appName, id, null, null, isReplication);
             synchronized (lock) {
                 if (this.expectedNumberOfRenewsPerMin > 0) {
                     // Since the client wants to cancel it, reduce the threshold (1 for 30 seconds, 2 for a minute)
+                    // 由于客户想要取消它，请降低阈值（1秒30秒，2分钟）
                     this.expectedNumberOfRenewsPerMin = this.expectedNumberOfRenewsPerMin - 2;
                     this.numberOfRenewsPerMinThreshold =
                             (int) (this.expectedNumberOfRenewsPerMin * serverConfig.getRenewalPercentThreshold());
@@ -395,6 +432,9 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      * this information to all peer eureka nodes. If this is replication event
      * from other replica nodes then it is not replicated.
      *
+     * 注册有关{@link InstanceInfo}的信息，并将此信息复制到所有对等的eureka节点。
+     * 如果这是来自其他副本节点的复制事件，则不会复制它。
+     *
      * @param info
      *            the {@link InstanceInfo} to be registered and replicated.
      * @param isReplication
@@ -403,11 +443,16 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      */
     @Override
     public void register(final InstanceInfo info, final boolean isReplication) {
+        // 租约过期时间
         int leaseDuration = Lease.DEFAULT_DURATION_IN_SECS;
         if (info.getLeaseInfo() != null && info.getLeaseInfo().getDurationInSecs() > 0) {
             leaseDuration = info.getLeaseInfo().getDurationInSecs();
         }
+        // --------------------关键方法--------------------
+        // 注册应用实例信息
         super.register(info, leaseDuration, isReplication);
+        // --------------------关键方法--------------------
+        // Eureka-Server 复制
         replicateToPeers(Action.Register, info.getAppName(), info.getId(), info, null, isReplication);
     }
 
@@ -418,7 +463,11 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      * java.lang.String, long, boolean)
      */
     public boolean renew(final String appName, final String id, final boolean isReplication) {
+        // ------------------------关键方法------------------------
+        // 续租
         if (super.renew(appName, id, isReplication)) {
+            // ------------------------关键方法------------------------
+            // 集群复制
             replicateToPeers(Action.Heartbeat, appName, id, null, null, isReplication);
             return true;
         }
@@ -480,13 +529,17 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
     public boolean isLeaseExpirationEnabled() {
         if (!isSelfPreservationModeEnabled()) {
             // The self preservation mode is disabled, hence allowing the instances to expire.
+            // 自保护模式被禁用，因此允许实例过期。
             return true;
         }
+        // 在前面设置的最小每分钟更新次数 > 0 &&
         return numberOfRenewsPerMinThreshold > 0 && getNumOfRenewsInLastMin() > numberOfRenewsPerMinThreshold;
     }
 
     /**
      * Checks to see if the self-preservation mode is enabled.
+     *
+     * 检查是否启用了自我保护模式。
      *
      * <p>
      * The self-preservation mode is enabled if the expected number of renewals
@@ -529,10 +582,14 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
                     }
                 }
             }
+
+            // 计算 expectedNumberOfRenewsPerMin 、 numberOfRenewsPerMinThreshold 参数
             synchronized (lock) {
                 // Update threshold only if the threshold is greater than the
-                // current expected threshold or if self preservation is disabled.
-                if ((count * 2) > (serverConfig.getRenewalPercentThreshold() * expectedNumberOfRenewsPerMin)
+                // current expected threshold of if the self preservation is disabled.
+                // 仅当阈值大于时才更新阈值
+                // 如果禁用自我保护的当前预期阈值。
+                if ((count * 2) > (serverConfig.getRenewalPercentThreshold() * numberOfRenewsPerMinThreshold)
                         || (!this.isSelfPreservationModeEnabled())) {
                     this.expectedNumberOfRenewsPerMin = count * 2;
                     this.numberOfRenewsPerMinThreshold = (int) ((count * 2) * serverConfig.getRenewalPercentThreshold());
@@ -613,6 +670,8 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
     /**
      * Replicates all eureka actions to peer eureka nodes except for replication
      * traffic to this node.
+     *
+     * 将所有eureka操作复制到对等eureka节点，但此节点的复制流量除外。
      *
      */
     private void replicateToPeers(Action action, String appName, String id,

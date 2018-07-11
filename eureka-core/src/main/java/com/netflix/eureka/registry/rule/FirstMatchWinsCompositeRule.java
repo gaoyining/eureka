@@ -10,6 +10,8 @@ import java.util.List;
  * This rule takes an ordered list of rules and returns the result of the first match or the
  * result of the {@link AlwaysMatchInstanceStatusRule}.
  *
+ * 此规则采用有序的规则列表，并返回第一个匹配的结果或{@link AlwaysMatchInstanceStatusRule}的结果。
+ *
  * Created by Nikos Michalakis on 7/13/16.
  */
 public class FirstMatchWinsCompositeRule implements InstanceStatusOverrideRule {
@@ -20,8 +22,10 @@ public class FirstMatchWinsCompositeRule implements InstanceStatusOverrideRule {
 
     public FirstMatchWinsCompositeRule(InstanceStatusOverrideRule... rules) {
         this.rules = rules;
+        // 设置默认规则
         this.defaultRule = new AlwaysMatchInstanceStatusRule();
         // Let's build up and "cache" the rule name to be used by toString();
+        // 让我们构建并“缓存”toString（）使用的规则名称;
         List<String> ruleNames = new ArrayList<>(rules.length+1);
         for (int i = 0; i < rules.length; ++i) {
             ruleNames.add(rules[i].toString());

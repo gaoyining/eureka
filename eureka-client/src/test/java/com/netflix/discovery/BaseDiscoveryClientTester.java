@@ -50,16 +50,12 @@ public abstract class BaseDiscoveryClientTester {
     }
 
     protected void setupDiscoveryClient() {
-        client = getSetupDiscoveryClient();
+        setupDiscoveryClient(30);
     }
 
-    protected EurekaClient getSetupDiscoveryClient() {
-        return getSetupDiscoveryClient(30);
-    }
-
-    protected EurekaClient getSetupDiscoveryClient(int renewalIntervalInSecs) {
+    protected void setupDiscoveryClient(int renewalIntervalInSecs) {
         InstanceInfo instanceInfo = newInstanceInfoBuilder(renewalIntervalInSecs).build();
-        return DiscoveryClientResource.setupDiscoveryClient(instanceInfo);
+        client = DiscoveryClientResource.setupDiscoveryClient(instanceInfo);
     }
 
     protected InstanceInfo.Builder newInstanceInfoBuilder(int renewalIntervalInSecs) {

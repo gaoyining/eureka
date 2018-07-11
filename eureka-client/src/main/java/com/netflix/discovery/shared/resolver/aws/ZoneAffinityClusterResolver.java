@@ -41,6 +41,8 @@ public class ZoneAffinityClusterResolver implements ClusterResolver<AwsEndpoint>
 
     /**
      * A zoneAffinity defines zone affinity (true) or anti-affinity rules (false).
+     *
+     * zoneAffinity定义区域关联（true）或反关联性规则（false）。
      */
     public ZoneAffinityClusterResolver(ClusterResolver<AwsEndpoint> delegate, String myZone, boolean zoneAffinity) {
         this.delegate = delegate;
@@ -55,6 +57,8 @@ public class ZoneAffinityClusterResolver implements ClusterResolver<AwsEndpoint>
 
     @Override
     public List<AwsEndpoint> getClusterEndpoints() {
+        // -------------------------关键方法--------------------------delegate.getClusterEndpoints()
+        // 获取群集端点
         List<AwsEndpoint>[] parts = ResolverUtils.splitByZone(delegate.getClusterEndpoints(), myZone);
         List<AwsEndpoint> myZoneEndpoints = parts[0];
         List<AwsEndpoint> remainingEndpoints = parts[1];
@@ -68,6 +72,7 @@ public class ZoneAffinityClusterResolver implements ClusterResolver<AwsEndpoint>
         return randomizedList;
     }
 
+    // 随机化和合并
     private static List<AwsEndpoint> randomizeAndMerge(List<AwsEndpoint> myZoneEndpoints, List<AwsEndpoint> remainingEndpoints) {
         if (myZoneEndpoints.isEmpty()) {
             return ResolverUtils.randomize(remainingEndpoints);

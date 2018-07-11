@@ -90,6 +90,8 @@ public class EurekaClientServerRestIntegrationTest {
                 serverCodecs,
                 eurekaServiceUrl
         );
+
+        Thread.sleep(Long.MAX_VALUE);
     }
 
     @AfterClass
@@ -208,6 +210,7 @@ public class EurekaClientServerRestIntegrationTest {
 
     /**
      * This will be read by server internal discovery client. We need to salience it.
+     * 注释元素必须是可接受范围内的数字支持的类型是：...
      */
     private static void injectEurekaConfiguration() throws UnknownHostException {
         String myHostName = InetAddress.getLocalHost().getHostName();

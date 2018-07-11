@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Helper class to manage lifecycle of a collection of {@link PeerEurekaNode}s.
  *
+ * 帮助类来管理{@link PeerEurekaNode}集合的生命周期。
+ *
  * @author Tomasz Bak
  */
 @Singleton
@@ -85,11 +87,17 @@ public class PeerEurekaNodes {
                 }
         );
         try {
+            // --------------------关键方法-----------------
+            // resolvePeerUrls():解析集群的url，在启动时，相当于把自己的url去掉，加载集群中其他的url
+            // --------------------关键方法-----------------
+            // updatePeerEurekaNodes():更新eureka集群结点
             updatePeerEurekaNodes(resolvePeerUrls());
             Runnable peersUpdateTask = new Runnable() {
                 @Override
                 public void run() {
                     try {
+                        // --------------------关键方法-----------------
+                        // updatePeerEurekaNodes()
                         updatePeerEurekaNodes(resolvePeerUrls());
                     } catch (Throwable e) {
                         logger.error("Cannot update the replica Nodes", e);
@@ -99,13 +107,16 @@ public class PeerEurekaNodes {
             };
             taskExecutor.scheduleWithFixedDelay(
                     peersUpdateTask,
+                    // 线程池启动后，Eureka-Server 集群节点更新频率，默认值：10 * 60 * 1000 毫秒。
                     serverConfig.getPeerEurekaNodesUpdateIntervalMs(),
+                    // 间隔时间，Eureka-Server 集群节点更新频率，默认值：10 * 60 * 1000 毫秒。
                     serverConfig.getPeerEurekaNodesUpdateIntervalMs(),
                     TimeUnit.MILLISECONDS
             );
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+        // 打印eureka集群结点
         for (PeerEurekaNode node : peerEurekaNodes) {
             logger.info("Replica node URL:  {}", node.getServiceUrl());
         }
@@ -126,17 +137,24 @@ public class PeerEurekaNodes {
     /**
      * Resolve peer URLs.
      *
+     * 解析对等URL。
+     *
      * @return peer URLs with node's own URL filtered out
      */
     protected List<String> resolvePeerUrls() {
+        // 获得InstanceInfo对象
         InstanceInfo myInfo = applicationInfoManager.getInfo();
+        // 获得zone
         String zone = InstanceInfo.getZone(clientConfig.getAvailabilityZones(clientConfig.getRegion()), myInfo);
+        // --------------------关键方法--------------------
+        // 获取eureka客户端与之交谈的所有eureka服务网址列表。
         List<String> replicaUrls = EndpointUtils
                 .getDiscoveryServiceUrls(clientConfig, zone, new EndpointUtils.InstanceInfoBasedUrlRandomizer(myInfo));
 
         int idx = 0;
         while (idx < replicaUrls.size()) {
             if (isThisMyUrl(replicaUrls.get(idx))) {
+                // 如果这个是我的URL，将它删除
                 replicaUrls.remove(idx);
             } else {
                 idx++;
@@ -148,6 +166,8 @@ public class PeerEurekaNodes {
     /**
      * Given new set of replica URLs, destroy {@link PeerEurekaNode}s no longer available, and
      * create new ones.
+     *
+     * 给定一组新的副本URL，销毁{@link PeerEurekaNode}不再可用，并创建新的。
      *
      * @param newPeerUrls peer node URLs; this collection should have local node's URL filtered out
      */
@@ -167,6 +187,7 @@ public class PeerEurekaNodes {
         }
 
         // Remove peers no long available
+        // 删除不久的同行
         List<PeerEurekaNode> newNodeList = new ArrayList<>(peerEurekaNodes);
 
         if (!toShutdown.isEmpty()) {
@@ -228,6 +249,9 @@ public class PeerEurekaNodes {
      * identify itself in the list of replica nodes and needs to take itself out
      * of replication traffic.
      *
+     * 检查给定的服务URL是否包含尝试复制的当前主机。
+     * 只有在EIP绑定完成后，主机才有机会在副本节点列表中标识自己，并且需要将自己从复制流量中解脱出来。
+     *
      * @param url the service url of the replica node that the check is made.
      * @return true, if the url represents the current node which is trying to
      *         replicate, false otherwise.
@@ -238,6 +262,8 @@ public class PeerEurekaNodes {
     
     /**
      * Checks if the given service url matches the supplied instance
+     *
+     * 检查给定的服务URL是否与提供的实例匹配
      *
      * @param url the service url of the replica node that the check is made.
      * @param instance the instance to check the service url against

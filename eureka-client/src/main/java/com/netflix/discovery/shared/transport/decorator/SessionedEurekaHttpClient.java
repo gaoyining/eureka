@@ -36,6 +36,9 @@ import static com.netflix.discovery.EurekaClientNames.METRIC_TRANSPORT_PREFIX;
  * a client to sticking to a particular Eureka server instance forever. This in turn guarantees even
  * load distribution in case of cluster topology change.
  *
+ * {@link SessionedEurekaHttpClient}以固定间隔（会话）强制执行完全重新连接，从而防止客户端永远指向到特定的Eureka服务器实例。
+ * 这反过来保证了在集群拓扑变化的情况下均匀的负载分配。
+ *
  * @author Tomasz Bak
  */
 public class SessionedEurekaHttpClient extends EurekaHttpClientDecorator {
@@ -46,6 +49,7 @@ public class SessionedEurekaHttpClient extends EurekaHttpClientDecorator {
     private final String name;
     private final EurekaHttpClientFactory clientFactory;
     private final long sessionDurationMs;
+    // 当前会话持续时间
     private volatile long currentSessionDurationMs;
 
     private volatile long lastReconnectTimeStamp = -1;
@@ -61,17 +65,22 @@ public class SessionedEurekaHttpClient extends EurekaHttpClientDecorator {
 
     @Override
     protected <R> EurekaHttpResponse<R> execute(RequestExecutor<R> requestExecutor) {
+        // 当前时间
         long now = System.currentTimeMillis();
+        // 最后重新连接时间戳，第一次等于 -1
         long delay = now - lastReconnectTimeStamp;
         if (delay >= currentSessionDurationMs) {
+            // 结束会话并重新开始
             logger.debug("Ending a session and starting anew");
             lastReconnectTimeStamp = now;
             currentSessionDurationMs = randomizeSessionDuration(sessionDurationMs);
+            // 关闭客户端
             TransportUtils.shutdown(eurekaHttpClientRef.getAndSet(null));
         }
 
         EurekaHttpClient eurekaHttpClient = eurekaHttpClientRef.get();
         if (eurekaHttpClient == null) {
+            // 关闭其他打开的客户端
             eurekaHttpClient = TransportUtils.getOrSetAnotherClient(eurekaHttpClientRef, clientFactory.newClient());
         }
         return requestExecutor.execute(eurekaHttpClient);
@@ -87,6 +96,8 @@ public class SessionedEurekaHttpClient extends EurekaHttpClientDecorator {
 
     /**
      * @return a randomized sessionDuration in ms calculated as +/- an additional amount in [0, sessionDurationMs/2]
+     *
+     * 以ms为单位的随机会话持续时间，计算为+/- [0，sessionDurationMs / 2]中的额外数量
      */
     protected long randomizeSessionDuration(long sessionDurationMs) {
         long delta = (long) (sessionDurationMs * (random.nextDouble() - 0.5));

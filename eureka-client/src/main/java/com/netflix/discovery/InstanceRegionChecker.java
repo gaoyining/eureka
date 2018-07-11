@@ -16,6 +16,10 @@ public class InstanceRegionChecker {
     private static Logger logger = LoggerFactory.getLogger(InstanceRegionChecker.class);
 
     private final AzToRegionMapper azToRegionMapper;
+
+    /**
+     * 本地区域( Region )
+     */
     private final String localRegion;
 
     InstanceRegionChecker(AzToRegionMapper azToRegionMapper, String localRegion) {

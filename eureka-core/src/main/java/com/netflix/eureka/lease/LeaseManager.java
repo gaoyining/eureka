@@ -22,11 +22,18 @@ import com.netflix.eureka.registry.AbstractInstanceRegistry;
  * This class is responsible for creating/renewing and evicting a <em>lease</em>
  * for a particular instance.
  *
+ * 此类负责为特定实例创建/更新和驱逐<em>租约</ em>。
+ *
+ * 租约管理器接口，提供租约的注册、续租、取消( 主动下线 )、过期( 过期下线 )
+ *
  * <p>
  * Leases determine what instances receive traffic. When there is no renewal
  * request from the client, the lease gets expired and the instances are evicted
  * out of {@link AbstractInstanceRegistry}. This is key to instances receiving traffic
  * or not.
+ *
+ * 租约确定哪些实例接收流量。 当没有来自客户端的续订请求时，
+ * 租约将过期，并且实例将从{@link AbstractInstanceRegistry}中逐出。 这是接收流量的实例的关键。
  * <p>
  *
  * @author Karthik Ranganathan, Greg Kim
@@ -63,6 +70,8 @@ public interface LeaseManager<T> {
     /**
      * Renew the {@link Lease} associated w/ the passed in <code>appName</code>
      * and <code>id</code>.
+     *
+     * 更新与@ code> appName </ code>和<code> id </ code>中传递的{@link Lease}相关联。
      *
      * @param id
      *            - unique id within appName

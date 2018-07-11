@@ -17,6 +17,9 @@ import java.util.TreeSet;
 /**
  * This class contains some of the utility functions previously found in DiscoveryClient, but should be elsewhere.
  * It *does not yet* clean up the moved code.
+ *
+ * 此类包含以前在DiscoveryClient中找到的一些实用程序函数，但应该在其他地方。
+ * 它*尚未*清理移动的代码。
  */
 public class EndpointUtils {
     private static final Logger logger = LoggerFactory.getLogger(EndpointUtils.class);
@@ -65,6 +68,8 @@ public class EndpointUtils {
     /**
      * Get the list of all eureka service urls for the eureka client to talk to.
      *
+     * 获取eureka客户端与之交谈的所有eureka服务网址列表。
+     *
      * @param clientConfig the clientConfig to use
      * @param zone the zone in which the client resides
      * @param randomizer a randomizer to randomized returned urls, if loading from dns
@@ -76,6 +81,8 @@ public class EndpointUtils {
         if (shouldUseDns) {
             return getServiceUrlsFromDNS(clientConfig, zone, clientConfig.shouldPreferSameZoneEureka(), randomizer);
         }
+        // -------------------关键方法-------------------
+        // 从属性文件中获取所有eureka服务URL的列表
         return getServiceUrlsFromConfig(clientConfig, zone, clientConfig.shouldPreferSameZoneEureka());
     }
 
@@ -182,12 +189,15 @@ public class EndpointUtils {
     /**
      * Get the list of all eureka service urls from properties file for the eureka client to talk to.
      *
+     * 从属性文件中获取所有eureka服务URL的列表，以便eureka客户端与之交谈。
+     *
      * @param clientConfig the clientConfig to use
      * @param instanceZone The zone in which the client resides
      * @param preferSameZone true if we have to prefer the same zone as the client, false otherwise
      * @return The list of all eureka service urls for the eureka client to talk to
      */
     public static List<String> getServiceUrlsFromConfig(EurekaClientConfig clientConfig, String instanceZone, boolean preferSameZone) {
+        // 老的url地址
         List<String> orderedUrls = new ArrayList<String>();
         String region = getRegion(clientConfig);
         String[] availZones = clientConfig.getAvailabilityZones(clientConfig.getRegion());

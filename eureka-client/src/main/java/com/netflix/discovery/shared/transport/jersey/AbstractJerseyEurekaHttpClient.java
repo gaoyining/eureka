@@ -160,6 +160,11 @@ public abstract class AbstractJerseyEurekaHttpClient implements EurekaHttpClient
         }
     }
 
+    /**
+     * GET 请求 Eureka-Server 的 apps/ 接口，返回格式为 JSON
+     * @param regions
+     * @return 全量注册信息
+     */
     @Override
     public EurekaHttpResponse<Applications> getApplications(String... regions) {
         return getApplicationsInternal("apps/", regions);

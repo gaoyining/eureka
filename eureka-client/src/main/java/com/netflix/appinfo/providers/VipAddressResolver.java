@@ -2,6 +2,7 @@ package com.netflix.appinfo.providers;
 
 /**
  * This only really exist for legacy support
+ * 这只适用于传统支持
  */
 public interface VipAddressResolver {
 

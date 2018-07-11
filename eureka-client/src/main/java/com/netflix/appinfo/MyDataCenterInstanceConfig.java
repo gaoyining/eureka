@@ -22,6 +22,7 @@ import javax.inject.Singleton;
 
 /**
  * An {@link InstanceInfo} configuration for the non-AWS datacenter.
+ * 非AWS数据中心的{@link InstanceInfo}配置。
  *
  * @author Karthik Ranganathan
  *

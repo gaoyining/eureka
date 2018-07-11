@@ -47,6 +47,8 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
  * The application class holds the list of instances for a particular
  * application.
  *
+ * 应用程序类包含特定应用程序的实例列表。
+ *
  * @author Karthik Ranganathan
  *
  */
@@ -124,6 +126,8 @@ public class Application {
 
     /**
      * Gets the list of instances associated with this particular application.
+     *
+     * 获取与此特定应用程序关联的实例列表。
      * <p>
      * Note that the instances are always returned with random order after
      * shuffling to avoid traffic to the same instances during startup. The

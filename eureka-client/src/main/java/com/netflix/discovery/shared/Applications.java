@@ -48,6 +48,7 @@ import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 /**
  * The class that wraps all the registry information returned by eureka server.
+ * 包装eureka服务器返回的所有注册表信息的类。
  *
  * <p>
  * Note that the registry information is fetched from eureka server as specified
@@ -90,6 +91,7 @@ public class Applications {
 
     /**
      * Create a new, empty Eureka application list.
+     * 创建一个新的空Eureka应用程序列表。
      */
     public Applications() {
         this(null, -1L, Collections.emptyList());
@@ -98,6 +100,8 @@ public class Applications {
     /**
      * Note that appsHashCode and versionDelta key names are formatted in a
      * custom/configurable way.
+     *
+     * 请注意，appsHashCode和versionDelta键名是以自定义/可配置的方式格式化的。
      */
     @JsonCreator
     public Applications(@JsonProperty("appsHashCode") String appsHashCode,
@@ -110,6 +114,7 @@ public class Applications {
         this.appsHashCode = appsHashCode;
         this.versionDelta = versionDelta;
 
+        // 客户端初始化的时候registeredApplications的size为0
         for (Application app : registeredApplications) {
             this.addApplication(app);
         }
@@ -129,6 +134,8 @@ public class Applications {
 
     /**
      * Gets the list of all registered <em>applications</em> from eureka.
+     *
+     * 从eureka获取所有已注册的<em>应用程序</ em>的列表。
      *
      * @return list containing all applications registered with eureka.
      */
@@ -371,6 +378,8 @@ public class Applications {
      * that of the instance. Note that an instance can be mapped to multiple vip
      * addresses.
      *
+     * 如果vip地址与实例的地址匹配，则将实例添加到给定的映射。 请注意，实例可以映射到多个vip地址。
+     *
      */
     private void addInstanceToMap(InstanceInfo info, String vipAddresses, Map<String, VipIndexSupport> vipMap) {
         if (vipAddresses != null) {
@@ -384,6 +393,7 @@ public class Applications {
 
     /**
      * Adds the instances to the internal vip address map.
+     * 将实例添加到内部vip地址映射。
      * 
      * @param app
      *            - the applications for which the instances need to be added.
@@ -392,6 +402,8 @@ public class Applications {
             Map<String, VipIndexSupport> secureVirtualHostNameAppMap) {
         // Check and add the instances to the their respective virtual host name
         // mappings
+        //检查实例并将其添加到各自的虚拟主机名
+        //映射
         for (InstanceInfo info : app.getInstances()) {
             String vipAddresses = info.getVIPAddress();
             if (vipAddresses != null) {

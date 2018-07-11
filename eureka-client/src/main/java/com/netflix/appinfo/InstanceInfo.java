@@ -44,10 +44,21 @@ import org.slf4j.LoggerFactory;
 /**
  * The class that holds information required for registration with
  * <tt>Eureka Server</tt> and to be discovered by other components.
+ *
+ * 包含注册所需信息的类
+ * <tt> Eureka Server </ tt>并由其他组件发现。
+
  * <p>
  * <code>@Auto</code> annotated fields are serialized as is; Other fields are
  * serialized as specified by the <code>@Serializer</code>.
  * </p>
+ *
+ * <P>
+ * <code> @Auto </ code>带注释的字段按原样序列化; 其他领域是
+ * 按<code> @Serializer </ code>指定的序列化。
+ * </ p>
+ *
+ * 应用实例信息。Eureka-Client 向 Eureka-Server 注册该对象信息。注册成功后，可以被其他 Eureka-Client 发现。
  *
  * @author Karthik Ranganathan, Greg Kim
  */
@@ -137,7 +148,7 @@ public class InstanceInfo {
     private volatile DataCenterInfo dataCenterInfo;
     private volatile String hostName;
     private volatile InstanceStatus status = InstanceStatus.UP;
-    private volatile InstanceStatus overriddenStatus = InstanceStatus.UNKNOWN;
+    private volatile InstanceStatus overriddenstatus = InstanceStatus.UNKNOWN;
     @XStreamOmitField
     private volatile boolean isInstanceInfoDirty = false;
     private volatile LeaseInfo leaseInfo;
@@ -180,8 +191,7 @@ public class InstanceInfo {
             @JsonProperty("dataCenterInfo") DataCenterInfo dataCenterInfo,
             @JsonProperty("hostName") String hostName,
             @JsonProperty("status") InstanceStatus status,
-            @JsonProperty("overriddenstatus") InstanceStatus overriddenStatus,
-            @JsonProperty("overriddenStatus") InstanceStatus overriddenStatusAlt,
+            @JsonProperty("overriddenstatus") InstanceStatus overriddenstatus,
             @JsonProperty("leaseInfo") LeaseInfo leaseInfo,
             @JsonProperty("isCoordinatingDiscoveryServer") Boolean isCoordinatingDiscoveryServer,
             @JsonProperty("metadata") HashMap<String, String> metadata,
@@ -208,7 +218,7 @@ public class InstanceInfo {
         this.dataCenterInfo = dataCenterInfo;
         this.hostName = hostName;
         this.status = status;
-        this.overriddenStatus = overriddenStatus == null ? overriddenStatusAlt : overriddenStatus;
+        this.overriddenstatus = overriddenstatus;
         this.leaseInfo = leaseInfo;
         this.isCoordinatingDiscoveryServer = isCoordinatingDiscoveryServer;
         this.lastUpdatedTimestamp = lastUpdatedTimestamp;
@@ -285,7 +295,7 @@ public class InstanceInfo {
         this.hostName = ii.hostName;
 
         this.status = ii.status;
-        this.overriddenStatus = ii.overriddenStatus;
+        this.overriddenstatus = ii.overriddenstatus;
 
         this.isInstanceInfoDirty = ii.isInstanceInfoDirty;
 
@@ -307,11 +317,11 @@ public class InstanceInfo {
 
 
     public enum InstanceStatus {
-        UP, // Ready to receive traffic
-        DOWN, // Do not send traffic- healthcheck callback failed
-        STARTING, // Just about starting- initializations to be done - do not
-        // send traffic
-        OUT_OF_SERVICE, // Intentionally shutdown for traffic
+        UP, // Ready to receive traffic  准备接收流量
+        DOWN, // Do not send traffic- healthcheck callback failed  不发送traffic-healthcheck回调失败
+        STARTING, // Just about starting- initializations to be done - do not 几乎要开始初始化 - 不要
+        // send traffic 发送流量
+        OUT_OF_SERVICE, // Intentionally shutdown for traffic 故意关闭流量
         UNKNOWN;
 
         public static InstanceStatus toEnum(String s) {
@@ -481,7 +491,7 @@ public class InstanceInfo {
          * @return @return the {@link InstanceInfo} builder.
          */
         public Builder setOverriddenStatus(InstanceStatus status) {
-            result.overriddenStatus = status;
+            result.overriddenstatus = status;
             return this;
         }
 
@@ -702,6 +712,8 @@ public class InstanceInfo {
         public Builder setVIPAddress(final String vipAddress) {
             result.vipAddressUnresolved = intern.apply(vipAddress);
             result.vipAddress = intern.apply(
+                    // ------------------关键方法-------------------
+                    // 创建 VIP地址解析器
                     vipAddressResolver.resolveDeploymentContextBasedVipAddresses(vipAddress));
             return this;
         }
@@ -897,6 +909,8 @@ public class InstanceInfo {
      * Return the default network address to connect to this instance. Typically this would be the fully
      * qualified public hostname.
      *
+     * 返回默认网络地址以连接到此实例。 通常，这将是完全限定的公共主机名。
+     *
      * However the user can configure the {@link EurekaInstanceConfig} to change the default value used
      * to populate this field using the {@link EurekaInstanceConfig#getDefaultAddressResolutionOrder()} property.
      *
@@ -975,11 +989,13 @@ public class InstanceInfo {
     /**
      * Returns the overridden status if any of the instance.
      *
+     * 如果有任何实例，则返回被覆盖的状态。
+     *
      * @return the status indicating whether an external process has changed the
      * status.
      */
     public InstanceStatus getOverriddenStatus() {
-        return overriddenStatus;
+        return overriddenstatus;
     }
 
     /**
@@ -993,6 +1009,8 @@ public class InstanceInfo {
 
     /**
      * Returns the lease information regarding when it expires.
+     *
+     * 返回有关何时到期的租约信息。
      *
      * @return the lease information of this instance.
      */
@@ -1061,6 +1079,7 @@ public class InstanceInfo {
 
     /**
      * Set the update time for this instance when the status was update.
+     * 更新状态时设置此实例的更新时间。
      */
     public void setLastUpdatedTimestamp() {
         this.lastUpdatedTimestamp = System.currentTimeMillis();
@@ -1115,6 +1134,7 @@ public class InstanceInfo {
     /**
      * Gets the Virtual Internet Protocol address for this instance. Defaults to
      * hostname if not specified.
+     * 获取此实例的虚拟Internet协议地址。 如果未指定，则默认为主机名。
      *
      * @return - The Virtual Internet Protocol address
      */
@@ -1127,6 +1147,8 @@ public class InstanceInfo {
      * Get the Secure Virtual Internet Protocol address for this instance.
      * Defaults to hostname if not specified.
      *
+     * 获取此实例的安全虚拟Internet协议地址。 如果未指定，则默认为主机名。
+     *
      * @return - The Secure Virtual Internet Protocol address.
      */
     public String getSecureVipAddress() {
@@ -1136,6 +1158,8 @@ public class InstanceInfo {
     /**
      * Gets the last time stamp when this instance was touched.
      *
+     * 获取触摸此实例的最后一个时间戳。
+     *
      * @return last timestamp when this instance was touched.
      */
     public Long getLastDirtyTimestamp() {
@@ -1144,6 +1168,7 @@ public class InstanceInfo {
 
     /**
      * Set the time indicating that the instance was touched.
+     * 设置表示触摸实例的时间。
      *
      * @param lastDirtyTimestamp time when the instance was touched.
      */
@@ -1153,6 +1178,7 @@ public class InstanceInfo {
 
     /**
      * Set the status for this instance.
+     * 设置此实例的状态。
      *
      * @param status status for this instance.
      * @return the prev status if a different status from the current was set, null otherwise
@@ -1185,8 +1211,8 @@ public class InstanceInfo {
      * @param status overridden status for this instance.
      */
     public synchronized void setOverriddenStatus(InstanceStatus status) {
-        if (this.overriddenStatus != status) {
-            this.overriddenStatus = status;
+        if (this.overriddenstatus != status) {
+            this.overriddenstatus = status;
         }
     }
 
@@ -1203,6 +1229,8 @@ public class InstanceInfo {
 
     /**
      * @return the lastDirtyTimestamp if is dirty, null otherwise.
+     *
+     * lastDirtyTimestamp如果是脏的，否则为null。
      */
     public synchronized Long isDirtyWithTime() {
         if (isInstanceInfoDirty) {
@@ -1232,6 +1260,8 @@ public class InstanceInfo {
     /**
      * Sets the dirty flag so that the instance information can be carried to
      * the discovery server on the next heartbeat.
+     *
+     * 设置脏标志，以便可以在下一个心跳上将实例信息传送到发现服务器。
      */
     public synchronized void setIsDirty() {
         isInstanceInfoDirty = true;
@@ -1252,6 +1282,9 @@ public class InstanceInfo {
     /**
      * Unset the dirty flag iff the unsetDirtyTimestamp matches the lastDirtyTimestamp. No-op if
      * lastDirtyTimestamp > unsetDirtyTimestamp
+     *
+     * 如果unsetDirtyTimestamp与lastDirtyTimestamp匹配，则取消设置脏标志。
+     * 如果lastDirtyTimestamp> unsetDirtyTimestamp，则为no-op
      *
      * @param unsetDirtyTimestamp the expected lastDirtyTimestamp to unset.
      */
@@ -1304,6 +1337,8 @@ public class InstanceInfo {
     /**
      * Set the action type performed on this instance in the server.
      *
+     * 设置在服务器中对此实例执行的操作类型。
+     *
      * @param actionType action type done on the instance.
      */
     public void setActionType(ActionType actionType) {
@@ -1332,10 +1367,10 @@ public class InstanceInfo {
     }
 
     public enum ActionType {
-        ADDED, // Added in the discovery server
-        MODIFIED, // Changed in the discovery server
+        ADDED, // Added in the discovery server 在发现服务器中添加
+        MODIFIED, // Changed in the discovery server 在发现服务器中更改
         DELETED
-        // Deleted from the discovery server
+        // Deleted from the discovery server 从发现服务器删除
     }
 
     /**
@@ -1356,6 +1391,8 @@ public class InstanceInfo {
      * Note that for AWS deployments, myInfo should contain AWS dataCenterInfo which should contain
      * the AWS zone of the instance, and availZones is ignored.
      *
+     * 获取特定实例所在的区域。
+     *
      * @param availZones the list of available zones for non-AWS deployments
      * @param myInfo
      *            - The InstanceInfo object of the instance.
@@ -1366,6 +1403,8 @@ public class InstanceInfo {
                 : availZones[0]);
         if (myInfo != null
                 && myInfo.getDataCenterInfo().getName() == DataCenterInfo.Name.Amazon) {
+
+            // 在aws注册中心，不考虑
 
             String awsInstanceZone = ((AmazonInfo) myInfo.getDataCenterInfo())
                     .get(AmazonInfo.MetaDataKey.availabilityZone);

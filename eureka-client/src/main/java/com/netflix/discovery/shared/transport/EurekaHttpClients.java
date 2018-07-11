@@ -53,7 +53,7 @@ public final class EurekaHttpClients {
                                                              EurekaTransportConfig transportConfig,
                                                              InstanceInfo myInstanceInfo,
                                                              ApplicationsResolver.ApplicationsSource applicationsSource) {
-
+        // 创建查询解析器
         ClosableResolver queryResolver = transportConfig.useBootstrapResolverForQuery()
                 ? wrapClosable(bootstrapResolver)
                 : queryClientResolver(bootstrapResolver, transportClientFactory,
@@ -67,6 +67,7 @@ public final class EurekaHttpClients {
         return canonicalClientFactory(EurekaClientNames.REGISTRATION, transportConfig, bootstrapResolver, transportClientFactory);
     }
 
+    // 经典客户端工厂
     static EurekaHttpClientFactory canonicalClientFactory(final String name,
                                                           final EurekaTransportConfig transportConfig,
                                                           final ClusterResolver<EurekaEndpoint> clusterResolver,
@@ -77,10 +78,12 @@ public final class EurekaHttpClients {
             public EurekaHttpClient newClient() {
                 return new SessionedEurekaHttpClient(
                         name,
+                        // 创建重试eureka工厂
                         RetryableEurekaHttpClient.createFactory(
                                 name,
                                 transportConfig,
                                 clusterResolver,
+                                // 创建TransportClientFactory
                                 RedirectingEurekaHttpClient.createFactory(transportClientFactory),
                                 ServerStatusEvaluators.legacyEvaluator()),
                         transportConfig.getSessionedClientReconnectIntervalSeconds() * 1000
@@ -96,8 +99,10 @@ public final class EurekaHttpClients {
 
     // ==================================
     // Resolvers for the client factories
+    // 客户工厂的解析器
     // ==================================
 
+    // 组合式BOOTSTRAP策略
     public static final String COMPOSITE_BOOTSTRAP_STRATEGY = "composite";
 
     public static ClosableResolver<AwsEndpoint> newBootstrapResolver(
@@ -107,6 +112,7 @@ public final class EurekaHttpClients {
             final InstanceInfo myInstanceInfo,
             final ApplicationsResolver.ApplicationsSource applicationsSource)
     {
+        // 默认的transportConfig.getBootstrapResolverStrategy()为 null
         if (COMPOSITE_BOOTSTRAP_STRATEGY.equals(transportConfig.getBootstrapResolverStrategy())) {
             if (clientConfig.shouldFetchRegistry()) {
                 return compositeBootstrapResolver(
@@ -122,13 +128,17 @@ public final class EurekaHttpClients {
             }
         }
 
+        // -------------------------关键方法------------------------
         // if all else fails, return the default
+        // 如果所有其他方法都失败，则返回默认值
         return defaultBootstrapResolver(clientConfig, myInstanceInfo);
     }
 
     /**
      * @return a bootstrap resolver that resolves eureka server endpoints based on either DNS or static config,
      *         depending on configuration for one or the other. This resolver will warm up at the start.
+     *         一个引导程序解析程序，它根据DNS或静态配置解析eureka服务器端点，
+     *         具体取决于其中一个或另一个的配置。 这个解析器会在一开始就准备好。
      */
     static ClosableResolver<AwsEndpoint> defaultBootstrapResolver(final EurekaClientConfig clientConfig,
                                                                   final InstanceInfo myInstanceInfo) {
@@ -141,8 +151,11 @@ public final class EurekaHttpClients {
                 true
         );
 
+        // --------------------关键方法-----------------
+        // 获得集群端点
         List<AwsEndpoint> initialValue = delegateResolver.getClusterEndpoints();
         if (initialValue.isEmpty()) {
+            // Eureka服务器端点的初始解析失败。 检查ConfigClusterResolver日志以获取更多信息
             String msg = "Initial resolution of Eureka server endpoints failed. Check ConfigClusterResolver logs for more info";
             logger.error(msg);
             failFastOnInitCheck(clientConfig, msg);
@@ -223,6 +236,7 @@ public final class EurekaHttpClients {
 
     /**
      * @return a resolver that resolves eureka server endpoints for query operations
+     * 解析器，解析eureka服务器端点以进行查询操作
      */
     static ClosableResolver<AwsEndpoint> queryClientResolver(final ClusterResolver bootstrapResolver,
                                                              final TransportClientFactory transportClientFactory,
@@ -230,6 +244,7 @@ public final class EurekaHttpClients {
                                                              final EurekaTransportConfig transportConfig,
                                                              final InstanceInfo myInstanceInfo,
                                                              final ApplicationsResolver.ApplicationsSource applicationsSource) {
+        // 远程解析器
         final EurekaHttpResolver remoteResolver = new EurekaHttpResolver(
                 clientConfig,
                 transportConfig,
@@ -238,6 +253,7 @@ public final class EurekaHttpClients {
                 transportConfig.getReadClusterVip()
         );
 
+        // 本地解析器
         final ApplicationsResolver localResolver = new ApplicationsResolver(
                 clientConfig,
                 transportConfig,
@@ -258,6 +274,9 @@ public final class EurekaHttpClients {
      * @return a composite resolver that resolves eureka server endpoints for query operations, given two resolvers:
      *         a resolver that can resolve targets via a remote call to a remote source, and a resolver that
      *         can resolve targets via data in the local registry.
+     *
+     * @return 一个复合解析器，它解析了eureka服务器端点的查询操作，给定了两个解析器：
+     *         一个可以通过远程调用远程源来解析目标的解析器，以及一个可以通过本地注册表中的数据解析目标的解析器。
      */
     /* testing */ static ClosableResolver<AwsEndpoint> compositeQueryResolver(
             final ClusterResolver<AwsEndpoint> remoteResolver,

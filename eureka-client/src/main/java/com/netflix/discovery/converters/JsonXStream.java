@@ -30,8 +30,12 @@ import com.thoughtworks.xstream.io.xml.XmlFriendlyNameCoder;
  * An <tt>Xstream</tt> specific implementation for serializing and deserializing
  * to/from JSON format.
  *
+ * 用于序列化和反序列化JSON格式的<tt> Xstream </ tt>特定实现。
+ *
  * <p>
  * This class also allows configuration of custom serializers with Xstream.
+ *
+ * 此类还允许使用Xstream配置自定义序列化程序。
  * </p>
  *
  * @author Karthik Ranganathan

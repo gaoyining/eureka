@@ -41,6 +41,10 @@ import org.slf4j.LoggerFactory;
  * <h3>Thread safety</h3>
  * Methods in this class may be called concurrently.
  *
+ * 跟随重定向链接的{@link EurekaHttpClient}，并对最终解析的端点执行请求。
+ * 如果必须单独处理注册和查询请求，则应创建两个不同的实例。
+ * <h3>线程安全性</ h3>可以同时调用此类中的方法。
+ *
  * @author Tomasz Bak
  */
 public class RedirectingEurekaHttpClient extends EurekaHttpClientDecorator {

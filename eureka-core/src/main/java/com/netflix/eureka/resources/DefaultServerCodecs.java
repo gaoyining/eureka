@@ -11,6 +11,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
+ *
+ * 默认服务器编解码器
+ *
  * @author David Liu
  */
 @Singleton
@@ -23,11 +26,15 @@ public class DefaultServerCodecs implements ServerCodecs {
     protected final CodecWrapper compactXmlCodec;
 
     private static CodecWrapper getFullJson(EurekaServerConfig serverConfig) {
+        // ------------------------关键方法---------------------
+        // 根据名称获得编码解析器
         CodecWrapper codec = CodecWrappers.getCodec(serverConfig.getJsonCodecName());
         return codec == null ? CodecWrappers.getCodec(CodecWrappers.LegacyJacksonJson.class) : codec;
     }
 
     private static CodecWrapper getFullXml(EurekaServerConfig serverConfig) {
+        // ------------------------关键方法---------------------
+        // 根据名称获得编码解析器
         CodecWrapper codec = CodecWrappers.getCodec(serverConfig.getXmlCodecName());
         return codec == null ? CodecWrappers.getCodec(CodecWrappers.XStreamXml.class) : codec;
     }
