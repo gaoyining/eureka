@@ -117,30 +117,42 @@ public class ApplicationsResource {
                                   @Context UriInfo uriInfo,
                                   @Nullable @QueryParam("regions") String regionsStr) {
 
+        // 是否请求地域
         boolean isRemoteRegionRequested = null != regionsStr && !regionsStr.isEmpty();
         String[] regions = null;
         if (!isRemoteRegionRequested) {
+            // 没有地域请求
+            // get监听器加1
             EurekaMonitors.GET_ALL.increment();
         } else {
             regions = regionsStr.toLowerCase().split(",");
-            Arrays.sort(regions); // So we don't have different caches for same regions queried in different order.
+            // So we don't have different caches for same regions queried in different order.
+            // 因此，对于以不同顺序查询的相同区域，我们没有不同的缓存。
+            Arrays.sort(regions);
             EurekaMonitors.GET_ALL_WITH_REMOTE_REGIONS.increment();
         }
 
         // Check if the server allows the access to the registry. The server can
         // restrict access if it is not
         // ready to serve traffic depending on various reasons.
+        // 检查服务器是否允许访问注册表。 服务器可以
+        // 如果不是，则限制访问
+        // 准备好根据各种原因提供服务。
         if (!registry.shouldAllowAccess(isRemoteRegionRequested)) {
+            // 不允许访问返回 403
             return Response.status(Status.FORBIDDEN).build();
         }
+        // 设置api 版本
         CurrentRequestVersion.set(Version.toEnum(version));
         KeyType keyType = Key.KeyType.JSON;
         String returnMediaType = MediaType.APPLICATION_JSON;
         if (acceptHeader == null || !acceptHeader.contains(HEADER_JSON_VALUE)) {
+            // 请求头为空 || 请求格式不包含json；设置为xml
             keyType = Key.KeyType.XML;
             returnMediaType = MediaType.APPLICATION_XML;
         }
 
+        // 响应缓存键( KEY )
         Key cacheKey = new Key(Key.EntityType.Application,
                 ResponseCacheImpl.ALL_APPS,
                 keyType, CurrentRequestVersion.get(), EurekaAccept.fromString(eurekaAccept), regions

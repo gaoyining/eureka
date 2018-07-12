@@ -14,17 +14,42 @@ public class Key {
 
     /**
      * An enum to define the entity that is stored in this cache for this key.
+     *
+     * 枚举，用于定义此密钥中存储在此高速缓存中的实体。
      */
     public enum EntityType {
         Application, VIP, SVIP
     }
 
+    /**
+     * 实体名
+     */
     private final String entityName;
+    /**
+     * 远程区域注册表
+     */
     private final String[] regions;
+    /**
+     * 请求参数类型
+     */
     private final KeyType requestType;
+    /**
+     * 请求 API 版本号
+     */
     private final Version requestVersion;
+    /**
+     * hashKey
+     */
     private final String hashKey;
+    /**
+     * 实体类型
+     *
+     * {@link EntityType}
+     */
     private final EntityType entityType;
+    /**
+     * {@link EurekaAccept}
+     */
     private final EurekaAccept eurekaAccept;
 
     public Key(EntityType entityType, String entityName, KeyType type, Version v, EurekaAccept eurekaAccept) {

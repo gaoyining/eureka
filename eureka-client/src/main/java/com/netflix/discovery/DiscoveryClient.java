@@ -1195,6 +1195,8 @@ public class DiscoveryClient implements EurekaClient {
             logger.error("The application is null for some reason. Not storing this information");
         } else if (fetchRegistryGeneration.compareAndSet(currentUpdateGeneration, currentUpdateGeneration + 1)) {
             // 防止有多个客户端同时更新程序
+            // -------------------关键方法----------------
+            // 过滤，只获取状态为开启( Up )的应用实例集合
             localRegionApps.set(this.filterAndShuffle(apps));
             logger.debug("Got full registry with apps hashcode {}", apps.getAppsHashCode());
         } else {
@@ -1765,6 +1767,7 @@ public class DiscoveryClient implements EurekaClient {
                 Map<String, Applications> remoteRegionVsApps = new ConcurrentHashMap<String, Applications>();
                 apps.shuffleAndIndexInstances(remoteRegionVsApps, clientConfig, instanceRegionChecker);
                 for (Applications applications : remoteRegionVsApps.values()) {
+                    // 过滤，只获取状态为开启( Up )的应用实例集合
                     applications.shuffleInstances(clientConfig.shouldFilterOnlyUpInstances());
                 }
                 this.remoteRegionVsApps = remoteRegionVsApps;

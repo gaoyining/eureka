@@ -292,6 +292,8 @@ public class Applications {
     /**
      * Shuffles a whole region so that the instances will not always be returned
      * in the same order.
+     *
+     * 对整个区域进行混洗，以便不会始终以相同的顺序返回实例。
      * 
      * @param remoteRegionsRegistry
      *            the map of remote region names to their registries

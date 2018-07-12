@@ -204,6 +204,9 @@ public class RemoteRegionRegistry implements LookupService<String> {
 
     /**
      * Check if this registry is ready for serving data.
+     *
+     * 检查此注册表是否已准备好提供数据。
+     *
      * @return true if ready, false otherwise.
      */
     public boolean isReadyForServingData() {

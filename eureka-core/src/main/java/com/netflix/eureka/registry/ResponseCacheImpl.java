@@ -61,6 +61,15 @@ import org.slf4j.LoggerFactory;
  * The class that is responsible for caching registry information that will be
  * queried by the clients.
  *
+ * 负责缓存客户端将查询的注册表信息的类。
+ *
+ * 1、应用实例注册、下线、过期时，只只只过期 readWriteCacheMap 。
+ * 2、readWriteCacheMap 写入一段时间( 可配置 )后自动过期。
+ * 3、定时任务对比 readWriteCacheMap 和 readOnlyCacheMap 的缓存值，若不一致，以前者为主。
+ *         通过这样的方式，实现了 readOnlyCacheMap 的定时过期。
+ *
+ * 注意：应用实例注册、下线、过期时，不会很快刷新到 readWriteCacheMap 缓存里。默认配置下，最大延迟在 30 秒。
+ *
  * <p>
  * The cache is maintained in compressed and non-compressed form for three
  * categories of requests - all applications, delta changes and for individual
@@ -69,6 +78,10 @@ import org.slf4j.LoggerFactory;
  *
  * The cache also maintains separate pay load for <em>JSON</em> and <em>XML</em>
  * formats and for multiple versions too.
+ *
+ * 缓存以压缩和非压缩形式维护，用于三类请求 - 所有应用程序，增量更改和单个应用程序。
+ * 就网络流量而言，压缩格式可能是最有效的，尤其是在查询所有应用程序时。
+ * 缓存还为<em> JSON </ em>和<em> XML </ em>格式以及多个版本维护单独的工资负载。
  * </p>
  *
  * @author Karthik Ranganathan, Greg Kim
@@ -103,6 +116,11 @@ public class ResponseCacheImpl implements ResponseCache {
      * requested by clients, we use this mapping to get all the keys with regions to be invalidated.
      * If we do not do this, any cached user requests containing region keys will not be invalidated and will stick
      * around till expiry. Github issue: https://github.com/Netflix/eureka/issues/118
+     *
+     * 此映射包含没有区域的键映射到带有区域的键列表（由客户端提供）因为在失效期间，
+     * 由本地区域的注册表更改触发，我们不知道客户端请求的区域，我们使用此映射到 获取要使区域无效的所有键。
+     * 如果我们不这样做，任何包含区域密钥的缓存用户请求都不会失效，并且会一直存在，直到到期为止。
+     * Github问题：https：//github.com/Netflix/eureka/issues/118
      */
     private final Multimap<Key, Key> regionSpecificKeys =
             Multimaps.newListMultimap(new ConcurrentHashMap<Key, Collection<Key>>(), new Supplier<List<Key>>() {
@@ -112,9 +130,18 @@ public class ResponseCacheImpl implements ResponseCache {
                 }
             });
 
+    /**
+     * 只读缓存
+     */
     private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();
 
+    /**
+     * 固定过期 + 固定大小的读写缓存
+     */
     private final LoadingCache<Key, Value> readWriteCacheMap;
+    /**
+     * 否开启只读请求响应缓存。
+     */
     private final boolean shouldUseReadOnlyResponseCache;
     private final AbstractInstanceRegistry registry;
     private final EurekaServerConfig serverConfig;
@@ -123,14 +150,22 @@ public class ResponseCacheImpl implements ResponseCache {
     ResponseCacheImpl(EurekaServerConfig serverConfig, ServerCodecs serverCodecs, AbstractInstanceRegistry registry) {
         this.serverConfig = serverConfig;
         this.serverCodecs = serverCodecs;
+        /**
+         * 是否开启只读缓存，默认 true
+         */
         this.shouldUseReadOnlyResponseCache = serverConfig.shouldUseReadOnlyResponseCache();
         this.registry = registry;
 
+        /**
+         * 只读缓存更新频率
+         */
         long responseCacheUpdateIntervalMs = serverConfig.getResponseCacheUpdateIntervalMs();
         this.readWriteCacheMap =
                 CacheBuilder.newBuilder().initialCapacity(1000)
+                        //  设置读写缓存过期时间
                         .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)
                         .removalListener(new RemovalListener<Key, Value>() {
+                            // 移除方法
                             @Override
                             public void onRemoval(RemovalNotification<Key, Value> notification) {
                                 Key removedKey = notification.getKey();
@@ -141,6 +176,7 @@ public class ResponseCacheImpl implements ResponseCache {
                             }
                         })
                         .build(new CacheLoader<Key, Value>() {
+                            // 加载方法
                             @Override
                             public Value load(Key key) throws Exception {
                                 if (key.hasRegions()) {
@@ -209,6 +245,8 @@ public class ResponseCacheImpl implements ResponseCache {
 
     @VisibleForTesting
     String get(final Key key, boolean useReadOnlyCache) {
+        // --------------------关键方法-----------------
+        // getValue():获得value
         Value payload = getValue(key, useReadOnlyCache);
         if (payload == null || payload.getPayload().equals(EMPTY_PAYLOAD)) {
             return null;
@@ -219,6 +257,8 @@ public class ResponseCacheImpl implements ResponseCache {
 
     /**
      * Get the compressed information about the applications.
+     *
+     * 获取有关应用程序的压缩信息。
      *
      * @param key
      *            the key for which the compressed cached information needs to
@@ -341,20 +381,25 @@ public class ResponseCacheImpl implements ResponseCache {
 
     /**
      * Get the payload in both compressed and uncompressed form.
+     * 以压缩和未压缩形式获取有效负载。
      */
     @VisibleForTesting
     Value getValue(final Key key, boolean useReadOnlyCache) {
         Value payload = null;
         try {
             if (useReadOnlyCache) {
+                // 开启只读缓存
                 final Value currentPayload = readOnlyCacheMap.get(key);
                 if (currentPayload != null) {
                     payload = currentPayload;
                 } else {
+                    // 只读缓存中没有，从读写缓存中获取
                     payload = readWriteCacheMap.get(key);
+                    // 再放入到读写缓存中
                     readOnlyCacheMap.put(key, payload);
                 }
             } else {
+                // 没有开启只读缓存
                 payload = readWriteCacheMap.get(key);
             }
         } catch (Throwable t) {
@@ -496,6 +541,8 @@ public class ResponseCacheImpl implements ResponseCache {
     /**
      * The class that stores payload in both compressed and uncompressed form.
      *
+     * 以压缩和未压缩形式存储有效内容的类。
+     *
      */
     public class Value {
         private final String payload;
@@ -506,11 +553,13 @@ public class ResponseCacheImpl implements ResponseCache {
             if (!EMPTY_PAYLOAD.equals(payload)) {
                 Stopwatch tracer = compressPayloadTimer.start();
                 try {
+                    // 封装模式，压缩
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     GZIPOutputStream out = new GZIPOutputStream(bos);
                     byte[] rawBytes = payload.getBytes();
                     out.write(rawBytes);
                     // Finish creation of gzip file
+                    // 完成gzip文件的创建
                     out.finish();
                     out.close();
                     bos.close();

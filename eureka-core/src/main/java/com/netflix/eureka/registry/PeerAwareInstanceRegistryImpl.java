@@ -358,8 +358,15 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      * Checks to see if the registry access is allowed or the server is in a
      * situation where it does not all getting registry information. The server
      * does not return registry information for a period specified in
+     *
+     * 检查是否允许注册表访问，或者服务器是否处于未获得注册表信息的情况。
+     * 服务器不会在指定的时间段内返回注册表信息
+     *
      * {@link EurekaServerConfig#getWaitTimeInMsWhenSyncEmpty()}, if it cannot
      * get the registry information from the peer eureka nodes at start up.
+     *
+     * {@link EurekaServerConfig＃getWaitTimeInMsWhenSyncEmpty（）}，
+     * 如果在启动时无法从对等的eureka节点获取注册表信息。
      *
      * @return false - if the instances count from a replica transfer returned
      *         zero and if the wait time has not elapsed, otherwise returns true
