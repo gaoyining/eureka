@@ -173,6 +173,9 @@ public final class EurekaHttpClients {
     /**
      * @return a bootstrap resolver that resolves eureka server endpoints via a remote call to a "vip source"
      *         the local registry, where the source is found from a rootResolver (dns or config)
+     *
+     * @return 一个引导程序解析程序，通过远程调用本地注册表的“vip源”解析eureka服务器端点，
+     *         其中源是从rootResolver（dns或config）找到的
      */
     static ClosableResolver<AwsEndpoint> compositeBootstrapResolver(
             final EurekaClientConfig clientConfig,

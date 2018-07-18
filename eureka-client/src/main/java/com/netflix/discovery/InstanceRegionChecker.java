@@ -27,6 +27,10 @@ public class InstanceRegionChecker {
         this.localRegion = localRegion;
     }
 
+    public boolean isLocalRegion(@Nullable String instanceRegion) {
+        return null == instanceRegion || instanceRegion.equals(localRegion); // no region == local
+    }
+
     @Nullable
     public String getInstanceRegion(InstanceInfo instanceInfo) {
         if (instanceInfo.getDataCenterInfo() == null || instanceInfo.getDataCenterInfo().getName() == null) {
@@ -35,6 +39,7 @@ public class InstanceRegionChecker {
 
             return localRegion;
         }
+        // AWS 跳过
         if (DataCenterInfo.Name.Amazon.equals(instanceInfo.getDataCenterInfo().getName())) {
             AmazonInfo amazonInfo = (AmazonInfo) instanceInfo.getDataCenterInfo();
             Map<String, String> metadata = amazonInfo.getMetadata();
@@ -45,10 +50,6 @@ public class InstanceRegionChecker {
         }
 
         return null;
-    }
-
-    public boolean isLocalRegion(@Nullable String instanceRegion) {
-        return null == instanceRegion || instanceRegion.equals(localRegion); // no region == local
     }
 
     public String getLocalRegion() {

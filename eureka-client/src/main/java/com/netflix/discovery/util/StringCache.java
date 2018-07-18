@@ -13,6 +13,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class StringCache {
 
+    /**
+     * 默认长度
+     */
     public static final int LENGTH_LIMIT = 38;
 
     private static final StringCache INSTANCE = new StringCache();
@@ -32,6 +35,7 @@ public class StringCache {
     public String cachedValueOf(final String str) {
         if (str != null && (lengthLimit < 0 || str.length() <= lengthLimit)) {
             // Return value from cache if available
+            // 如果可用，从缓存返回值
             try {
                 lock.readLock().lock();
                 WeakReference<String> ref = cache.get(str);
@@ -43,6 +47,7 @@ public class StringCache {
             }
 
             // Update cache with new content
+            // 使用新内容更新缓存
             try {
                 lock.writeLock().lock();
                 WeakReference<String> ref = cache.get(str);

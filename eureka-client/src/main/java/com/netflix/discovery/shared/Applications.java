@@ -81,6 +81,11 @@ public class Applications {
 
     private static final String STATUS_DELIMITER = "_";
 
+    /**
+     * Eureka-Client 将变化的应用集合和本地缓存的应用集合进行合并后进行计算本地的应用集合一致性哈希码。
+     * 若两个哈希码相等，意味着增量获取成功；若不相等，意味着增量获取失败，
+     * Eureka-Client 重新和 Eureka-Server 全量获取应用集合。
+     */
     private String appsHashCode;
     private Long versionDelta;
     @XStreamImplicit
@@ -147,6 +152,8 @@ public class Applications {
     /**
      * Gets the list of all registered <em>applications</em> for the given
      * application name.
+     *
+     * 获取给定应用程序名称的所有已注册<em>应用程序</ em>的列表。
      *
      * @param appName
      *            the application name for which the result need to be fetched.
@@ -233,19 +240,32 @@ public class Applications {
      * Gets the hash code for this <em>applications</em> instance. Used for
      * comparison of instances between eureka server and eureka client.
      *
+     * 获取此<em>应用程序</ em>实例的哈希码。 用于比较eureka服务器和eureka客户端之间的实例。
+     *
+     * 使用每个应用实例状态( status ) + 数量( count )拼接出一致性哈希码。若数量为 0 ，
+     * 该应用实例状态不进行拼接。状态以字符串大小排序。
+     * 举个例子，8 个 UP ，0 个 DOWN ，则 appsHashCode = UP_8_ 。8 个 UP ，2 个 DOWN ，则 appsHashCode = DOWN_2_UP_8_ 。
+     *
      * @return the internal hash code representation indicating the information
      *         about the instances.
      */
     @JsonIgnore
     public String getReconcileHashCode() {
+        // 计数集合 key：应用实例状态
         TreeMap<String, AtomicInteger> instanceCountMap = new TreeMap<String, AtomicInteger>();
+        // -----------------------关键方法-------------------
+        // 计算实例数
         populateInstanceCountMap(instanceCountMap);
+        // -----------------------关键方法-------------------
+        // 计算 hashcode
         return getReconcileHashCode(instanceCountMap);
     }
 
     /**
      * Populates the provided instance count map. The instance count map is used
      * as part of the general app list synchronization mechanism.
+     *
+     * 填充提供的实例计数映射。 实例计数映射用作常规应用程序列表同步机制的一部分。
      * 
      * @param instanceCountMap
      *            the map to populate
@@ -264,6 +284,8 @@ public class Applications {
      * Gets the reconciliation hashcode. The hashcode is used to determine
      * whether the applications list has changed since the last time it was
      * acquired.
+     *
+     * 获取协调哈希码。 哈希码用于确定应用程序列表自上次获取以来是否已更改。
      * 
      * @param instanceCountMap
      *            the instance count map to use for generating the hash

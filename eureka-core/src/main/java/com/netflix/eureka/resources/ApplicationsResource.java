@@ -117,7 +117,7 @@ public class ApplicationsResource {
                                   @Context UriInfo uriInfo,
                                   @Nullable @QueryParam("regions") String regionsStr) {
 
-        // 是否请求地域
+        // 是否请求地域，如果请求区域不为空
         boolean isRemoteRegionRequested = null != regionsStr && !regionsStr.isEmpty();
         String[] regions = null;
         if (!isRemoteRegionRequested) {
@@ -160,11 +160,13 @@ public class ApplicationsResource {
 
         Response response;
         if (acceptEncoding != null && acceptEncoding.contains(HEADER_GZIP_VALUE)) {
+            // 从缓存中获取压缩内容
             response = Response.ok(responseCache.getGZIP(cacheKey))
                     .header(HEADER_CONTENT_ENCODING, HEADER_GZIP_VALUE)
                     .header(HEADER_CONTENT_TYPE, returnMediaType)
                     .build();
         } else {
+            // 从缓存中获取
             response = Response.ok(responseCache.get(cacheKey))
                     .build();
         }
@@ -212,6 +214,8 @@ public class ApplicationsResource {
 
         // If the delta flag is disabled in discovery or if the lease expiration
         // has been disabled, redirect clients to get all instances
+        // 如果在发现中禁用了delta标志，或者租约到期
+        // 已被禁用，重定向客户端以获取所有实例
         if ((serverConfig.shouldDisableDelta()) || (!registry.shouldAllowAccess(isRemoteRegionRequested))) {
             return Response.status(Status.FORBIDDEN).build();
         }
@@ -221,10 +225,13 @@ public class ApplicationsResource {
             EurekaMonitors.GET_ALL_DELTA.increment();
         } else {
             regions = regionsStr.toLowerCase().split(",");
-            Arrays.sort(regions); // So we don't have different caches for same regions queried in different order.
+            // So we don't have different caches for same regions queried in different order.
+            // 因此，对于以不同顺序查询的相同区域，我们没有不同的缓存。
+            Arrays.sort(regions);
             EurekaMonitors.GET_ALL_DELTA_WITH_REMOTE_REGIONS.increment();
         }
 
+        // 设置版本
         CurrentRequestVersion.set(Version.toEnum(version));
         KeyType keyType = Key.KeyType.JSON;
         String returnMediaType = MediaType.APPLICATION_JSON;

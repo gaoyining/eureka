@@ -31,13 +31,32 @@ import java.util.concurrent.atomic.AtomicLong;
  * </li>
  * </ul>
  *
+ * 速率限制器实现基于令牌桶算法。 有两个参数：
+ * <ul>
+ *      <li>
+ *          突发大小 - 作为突发允许进入系统的最大请求数
+ *      </ li>
+ *      <li>
+ *          平均速率 - 预期的每秒请求数（也支持使用MINUTES的RateLimiters）
+ *      </ li>
+ * </ ul>
+ *
  * @author Tomasz Bak
  */
 public class RateLimiter {
 
+    /**
+     * 速率单位转换成毫秒
+     */
     private final long rateToMsConversion;
 
+    /**
+     * 消耗令牌数
+     */
     private final AtomicInteger consumedTokens = new AtomicInteger();
+    /**
+     * 最后填充时间
+     */
     private final AtomicLong lastRefillTime = new AtomicLong(0);
 
     @Deprecated
@@ -48,9 +67,11 @@ public class RateLimiter {
     public RateLimiter(TimeUnit averageRateUnit) {
         switch (averageRateUnit) {
             case SECONDS:
+                // 秒
                 rateToMsConversion = 1000;
                 break;
             case MINUTES:
+                // 分钟
                 rateToMsConversion = 60 * 1000;
                 break;
             default:
@@ -58,6 +79,14 @@ public class RateLimiter {
         }
     }
 
+    // RateLimiter.java
+    /**
+     * 获取令牌( Token )
+     *
+     * @param burstSize 令牌桶上限
+     * @param averageRate 令牌再装平均速率
+     * @return 是否获取成功
+     */
     public boolean acquire(int burstSize, long averageRate) {
         return acquire(burstSize, averageRate, System.currentTimeMillis());
     }
@@ -69,24 +98,48 @@ public class RateLimiter {
             return true;
         }
 
+        // ----------------------关键方法---------------------------
+        // 重新填充令牌
         refillToken(burstSize, averageRate, currentTimeMillis);
+        // ----------------------关键方法---------------------------
+        // 消费令牌
         return consumeToken(burstSize);
     }
 
+    /**
+     * 获取令牌( Token )
+     *
+     * @param burstSize 令牌桶上限
+     * @param averageRate 令牌再装平均速率
+     * @param currentTimeMillis 当前时间
+     * @return 是否获取成功
+     */
     private void refillToken(int burstSize, long averageRate, long currentTimeMillis) {
+        // 最后的填充时间
         long refillTime = lastRefillTime.get();
+        // 获得过去多少毫秒
         long timeDelta = currentTimeMillis - refillTime;
 
+        // 计算可填充最大令牌数量
         long newTokens = timeDelta * averageRate / rateToMsConversion;
         if (newTokens > 0) {
+            // 计算新的填充令牌的时间
             long newRefillTime = refillTime == 0
                     ? currentTimeMillis
                     : refillTime + newTokens * rateToMsConversion / averageRate;
+            // 每次填充令牌，会设置 currentTimeMillis 到 refillTime
             if (lastRefillTime.compareAndSet(refillTime, newRefillTime)) {
+                // CAS保证有且仅有一个线程进入填充
                 while (true) {
+                    // 计算填充令牌后的已消耗令牌数量
                     int currentLevel = consumedTokens.get();
-                    int adjustedLevel = Math.min(currentLevel, burstSize); // In case burstSize decreased
-                    int newLevel = (int) Math.max(0, adjustedLevel - newTokens);
+                    // In case burstSize decreased
+                    // 如果burstSize减少了
+
+                    // 取计算填充令牌后的已消耗令牌数量和令牌桶的最小值，为令牌数量
+                    int adjustedLevel = Math.min(currentLevel, burstSize);
+                    // 取令牌数量减去计算可填充最大令牌数量
+                    int newLevel = (int) Math.max(0, adjustedLevel  -newTokens);
                     if (consumedTokens.compareAndSet(currentLevel, newLevel)) {
                         return;
                     }
@@ -97,10 +150,12 @@ public class RateLimiter {
 
     private boolean consumeToken(int burstSize) {
         while (true) {
+            // 木桶里没有令牌
             int currentLevel = consumedTokens.get();
             if (currentLevel >= burstSize) {
                 return false;
             }
+            // CAS 避免和正在消费令牌或者填充令牌的线程冲突
             if (consumedTokens.compareAndSet(currentLevel, currentLevel + 1)) {
                 return true;
             }

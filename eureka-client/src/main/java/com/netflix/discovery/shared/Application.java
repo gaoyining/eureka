@@ -102,6 +102,8 @@ public class Application {
     /**
      * Add the given instance info the list.
      *
+     * 在列表中添加给定的实例信息。
+     *
      * @param i
      *            the instance info object to be added.
      */
@@ -226,6 +228,7 @@ public class Application {
             Iterator<InstanceInfo> it = instanceInfoList.iterator();
             while (it.hasNext()) {
                 InstanceInfo instanceInfo = it.next();
+                // 关键逻辑，状态不为UP，移除实例
                 if (filterUpInstances && InstanceStatus.UP != instanceInfo.getStatus()) {
                     it.remove();
                 } else if (remoteIndexingActive) {
@@ -252,6 +255,7 @@ public class Application {
             }
 
         }
+        // 打乱顺序
         Collections.shuffle(instanceInfoList, shuffleRandom);
         this.shuffledInstances.set(instanceInfoList);
     }

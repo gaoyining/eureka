@@ -100,6 +100,7 @@ public class InstanceInfo {
     public static final int DEFAULT_COUNTRY_ID = 1; // US
 
     // The (fixed) instanceId for this instanceInfo. This should be unique within the scope of the appName.
+    // 此instanceInfo的（固定）instanceId。 这应该在appName的范围内是唯一的。
     private volatile String instanceId;
 
     private volatile String appName;
@@ -148,6 +149,17 @@ public class InstanceInfo {
     private volatile DataCenterInfo dataCenterInfo;
     private volatile String hostName;
     private volatile InstanceStatus status = InstanceStatus.UP;
+    /**
+     * 应用实例的覆盖状态属性
+     *
+     * 调用 Eureka-Server HTTP Restful 接口 apps/${APP_NAME}/${INSTANCE_ID}/status 对应用实例覆盖状态的变更，
+     * 从而达到主动的、强制的变更应用实例状态。注意，实际不会真的修改 Eureka-Client 应用实例的状态，
+     * 而是修改在 Eureka-Server 注册的应用实例的状态。
+     *
+     * 通过这样的方式，Eureka-Client 在获取到注册信息时，并且配置 eureka.shouldFilterOnlyUpInstances = true，
+     * 过滤掉非 InstanceStatus.UP 的应用实例，从而避免调动该实例，以达到应用实例的暂停服务( InstanceStatus.OUT_OF_SERVICE )，
+     * 而无需关闭应用实例。
+     */
     private volatile InstanceStatus overriddenstatus = InstanceStatus.UNKNOWN;
     @XStreamOmitField
     private volatile boolean isInstanceInfoDirty = false;
@@ -942,6 +954,9 @@ public class InstanceInfo {
      * This is still necessary for backwards compatibility when upgrading in a deployment with multiple
      * client versions (some with the change, some without).
      *
+     * 返回实例的唯一ID。 （注意）现在id是在instanceProvider中的创建时设置的，为什么其他检查呢？
+     * 在具有多个客户端版本的部署中升级时，这仍然是向后兼容性所必需的（一些具有更改，一些没有）。
+     *
      * @return the unique id.
      */
     @JsonIgnore
@@ -1195,6 +1210,7 @@ public class InstanceInfo {
 
     /**
      * Set the status for this instance without updating the dirty timestamp.
+     * 设置此实例的状态而不更新脏时间戳。
      *
      * @param status status for this instance.
      */
@@ -1300,6 +1316,9 @@ public class InstanceInfo {
      * return the instances. This flag is used by the discovery clients to
      * identity the discovery server which is coordinating/returning the
      * information.
+     *
+     * 如果此实例与返回实例的发现服务器相同，则设置标志。
+     * 发现客户端使用此标志来标识正在协调/返回信息的发现服务器。
      */
     public void setIsCoordinatingDiscoveryServer() {
         String instanceId = getId();

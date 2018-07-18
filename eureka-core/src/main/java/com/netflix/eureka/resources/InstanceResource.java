@@ -176,15 +176,21 @@ public class InstanceResource {
             @HeaderParam(PeerEurekaNode.HEADER_REPLICATION) String isReplication,
             @QueryParam("lastDirtyTimestamp") String lastDirtyTimestamp) {
         try {
+            // 从注册表获得实例Id
             if (registry.getInstanceByAppAndId(app.getName(), id) == null) {
+                // 实例不存在
                 logger.warn("Instance not found: {}/{}", app.getName(), id);
+                // 返回404
                 return Response.status(Status.NOT_FOUND).build();
             }
+            // -------------------------关键方法----------------------
+            // 更改实例覆盖状态
             boolean isSuccess = registry.statusUpdate(app.getName(), id,
                     InstanceStatus.valueOf(newStatus), lastDirtyTimestamp,
                     "true".equals(isReplication));
 
             if (isSuccess) {
+                // 更新成功
                 logger.info("Status updated: {} - {} - {}", app.getName(), id, newStatus);
                 return Response.ok().build();
             } else {
@@ -202,6 +208,8 @@ public class InstanceResource {
      * Removes status override for an instance, set with
      * {@link #statusUpdate(String, String, String)}.
      *
+     * 删除实例的状态覆盖，使用{@link #statusUpdate（String，String，String）}进行设置。
+     *
      * @param isReplication
      *            a header parameter containing information whether this is
      *            replicated from other nodes.
@@ -217,12 +225,17 @@ public class InstanceResource {
             @QueryParam("value") String newStatusValue,
             @QueryParam("lastDirtyTimestamp") String lastDirtyTimestamp) {
         try {
+            // 获得实例
             if (registry.getInstanceByAppAndId(app.getName(), id) == null) {
+                // 没有找到实例
                 logger.warn("Instance not found: {}/{}", app.getName(), id);
+                // 返回404
                 return Response.status(Status.NOT_FOUND).build();
             }
 
             InstanceStatus newStatus = newStatusValue == null ? InstanceStatus.UNKNOWN : InstanceStatus.valueOf(newStatusValue);
+            // -------------------------关键方法----------------------------
+            // 删除应用实例覆盖状态
             boolean isSuccess = registry.deleteStatusOverride(app.getName(), id,
                     newStatus, lastDirtyTimestamp, "true".equals(isReplication));
 

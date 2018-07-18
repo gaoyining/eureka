@@ -39,7 +39,6 @@ class InstanceInfoReplicator implements Runnable {
     /**
      * 应用实例信息
      */
-
     private final InstanceInfo instanceInfo;
 
     /**
@@ -59,7 +58,13 @@ class InstanceInfoReplicator implements Runnable {
      * 是否开启调度
      */
     private final AtomicBoolean started;
+    /**
+     * 令牌桶上限，默认：2
+     */
     private final RateLimiter rateLimiter;
+    /**
+     * 令牌再装平均速率，默认：60 * 2 / 30 = 4
+     */
     private final int burstSize;
     private final int allowedRatePerMinute;
 

@@ -104,7 +104,7 @@ public class DefaultEurekaServerConfig implements EurekaServerConfig {
     private final DynamicBooleanProperty rateLimiterEnabled = configInstance.getBooleanProperty(namespace + "rateLimiter.enabled", false);
 
     /**
-     * 速率限制器节流阀标准客户端
+     * 客户端标准速率限制器节流阀，默认是false
      */
     private final DynamicBooleanProperty rateLimiterThrottleStandardClients = configInstance.getBooleanProperty(namespace + "rateLimiter.throttleStandardClients", false);
 

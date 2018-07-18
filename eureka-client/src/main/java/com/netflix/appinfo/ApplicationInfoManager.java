@@ -196,6 +196,7 @@ public class ApplicationInfoManager {
             return;
         }
 
+        // 获得到了实例状态，prev = null，就不走下面的分支，没有获得，就重新走，不确定？？？？？？？？？？？？
         InstanceStatus prev = instanceInfo.setStatus(next);
         if (prev != null) {
             for (StatusChangeListener listener : listeners.values()) {

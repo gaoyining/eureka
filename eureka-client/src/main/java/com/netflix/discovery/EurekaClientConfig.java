@@ -75,7 +75,7 @@ public interface EurekaClientConfig {
      * Indicates how often(in seconds) to replicate instance changes to be
      * replicated to the eureka server.
      *
-     * 向 Eureka-Server 同步应用实例信息变化频率，单位：秒。
+     * 向 Eureka-Server 同步应用实例信息变化频率，单位：秒。默认30秒
      *
      * @return the instance replication interval in seconds.
      */
@@ -413,7 +413,7 @@ public interface EurekaClientConfig {
      * Indicates whether the eureka client should disable fetching of delta and
      * should rather resort to getting the full registry information.
      *
-     * 指示eureka客户端是否应禁用delta的提取，而应该使用获取完整的注册表信息。
+     * 指示eureka客户端是否应禁用增量提取，而应该使用获取完整的注册表信息。
      *
      * <p>
      * Note that the delta fetches can reduce the traffic tremendously, because

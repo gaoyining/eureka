@@ -32,6 +32,7 @@ public class DownOrStartingRule implements InstanceStatusOverrideRule {
         // 目前正在服务中
         if ((!InstanceInfo.InstanceStatus.UP.equals(instanceInfo.getStatus()))
                 && (!InstanceInfo.InstanceStatus.OUT_OF_SERVICE.equals(instanceInfo.getStatus()))) {
+            // 实例状态不为UP && 实例状态不为OUT_OF_SERVICE 则为匹配
             logger.debug("Trusting the instance status {} from replica or instance for instance {}",
                     instanceInfo.getStatus(), instanceInfo.getId());
             return StatusOverrideResult.matchingStatus(instanceInfo.getStatus());

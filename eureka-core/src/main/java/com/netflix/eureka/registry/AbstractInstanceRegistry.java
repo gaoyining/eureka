@@ -85,8 +85,12 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      * 区域名称VS远程注册表
      */
     protected Map<String, RemoteRegionRegistry> regionNameVSRemoteRegistry = new HashMap<String, RemoteRegionRegistry>();
+    /**
+     * 实例覆盖状态集合
+     */
     protected final ConcurrentMap<String, InstanceStatus> overriddenInstanceStatusMap = CacheBuilder
             .newBuilder().initialCapacity(500)
+            // 有效期1小时
             .expireAfterAccess(1, TimeUnit.HOURS)
             .<String, InstanceStatus>build().asMap();
 
@@ -560,6 +564,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      * between {@link InstanceStatus#OUT_OF_SERVICE} and
      * {@link InstanceStatus#UP} to put the instance in and out of traffic.
      *
+     * 更新实例的状态。
+     * 通常会在{@link InstanceStatus＃OUT_OF_SERVICE}和{@link InstanceStatus＃UP}之间放置一个实例，以将实例放入和转出流量。
+     *
      * @param appName the application name of the instance.
      * @param id the unique identifier of the instance.
      * @param newStatus the new {@link InstanceStatus}.
@@ -573,46 +580,73 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                                 InstanceStatus newStatus, String lastDirtyTimestamp,
                                 boolean isReplication) {
         try {
+            // 获取读锁
             read.lock();
+            // 添加 覆盖状态变更次数 到 监控
             STATUS_UPDATE.increment(isReplication);
+            // 从注册表中获得租约信息
             Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
             Lease<InstanceInfo> lease = null;
             if (gMap != null) {
+                // 租约Map存在，获得租约
                 lease = gMap.get(id);
             }
+            // 租约不存在
             if (lease == null) {
                 return false;
             } else {
+                // 设置租约时间，其实就是续租
                 lease.renew();
                 InstanceInfo info = lease.getHolder();
                 // Lease is always created with its instance info object.
                 // This log statement is provided as a safeguard, in case this invariant is violated.
+                // 始终使用其实例信息对象创建租约。
+                // 如果违反了此不变量，则提供此日志语句作为安全措施。
                 if (info == null) {
+                    // 找不到持有人的租约，例如id
                     logger.error("Found Lease without a holder for instance id {}", id);
                 }
                 if ((info != null) && !(info.getStatus().equals(newStatus))) {
+                    // 新状态和实例状态不一致
                     // Mark service as UP if needed
+                    // 设置租约的开始服务的时间戳（只有第一次有效）。
                     if (InstanceStatus.UP.equals(newStatus)) {
+                        // 如果新状态为UP
                         lease.serviceUp();
                     }
                     // This is NAC overriden status
+                    // 这是NAC覆盖状态
+                    // 存入实例覆盖状态Map
                     overriddenInstanceStatusMap.put(id, newStatus);
                     // Set it for transfer of overridden status to replica on
                     // replica start up
+                    // 设置它以将重写状态传输到副本
+                    // 复制品启动
+                    // 设置实例覆盖状态
                     info.setOverriddenStatus(newStatus);
+                    // 设置 应用实例信息 数据不一致时间
                     long replicaDirtyTimestamp = 0;
+
+                    // 设置实例状态，而不更新需要更新
                     info.setStatusWithoutDirty(newStatus);
                     if (lastDirtyTimestamp != null) {
+                        // 最后的更新时间戳不为空，设置如果复制的脏时间戳
                         replicaDirtyTimestamp = Long.valueOf(lastDirtyTimestamp);
                     }
                     // If the replication's dirty timestamp is more than the existing one, just update
                     // it to the replica's.
+                    // 如果复制的脏时间戳大于现有的时间戳，则只需更新
+                    // 它到副本的。
                     if (replicaDirtyTimestamp > info.getLastDirtyTimestamp()) {
                         info.setLastDirtyTimestamp(replicaDirtyTimestamp);
                     }
+                    // 添加到 最近租约变更记录队列
                     info.setActionType(ActionType.MODIFIED);
                     recentlyChangedQueue.add(new RecentlyChangedItem(lease));
+                    // 设置 最后更新时间
                     info.setLastUpdatedTimestamp();
+                    // -------------------------关键方法--------------------
+                    // 设置 响应缓存 过期
                     invalidateCache(appName, info.getVIPAddress(), info.getSecureVipAddress());
                 }
                 return true;
@@ -624,6 +658,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
     /**
      * Removes status override for a give instance.
+     *
+     * 删除给定实例的状态覆盖。
      *
      * @param appName the application name of the instance.
      * @param id the unique identifier of the instance.
@@ -639,41 +675,58 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                                         String lastDirtyTimestamp,
                                         boolean isReplication) {
         try {
+            // 获取读锁
             read.lock();
+            // 添加 覆盖状态删除次数 到 监控
             STATUS_OVERRIDE_DELETE.increment(isReplication);
+            // 获得 租约
             Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
             Lease<InstanceInfo> lease = null;
             if (gMap != null) {
                 lease = gMap.get(id);
             }
+            // 租约不存在
             if (lease == null) {
                 return false;
             } else {
+                // 设置 租约最后更新时间（续租）
                 lease.renew();
+                // 应用实例信息不存在( 防御型编程 )
                 InstanceInfo info = lease.getHolder();
 
                 // Lease is always created with its instance info object.
                 // This log statement is provided as a safeguard, in case this invariant is violated.
+                // 始终使用其实例信息对象创建租约。
+                // 如果违反了此不变量，则提供此日志语句作为安全措施。
                 if (info == null) {
                     logger.error("Found Lease without a holder for instance id {}", id);
                 }
 
+                // 移除 应用实例覆盖状态
                 InstanceStatus currentOverride = overriddenInstanceStatusMap.remove(id);
                 if (currentOverride != null && info != null) {
+                    // 设置 应用实例覆盖状态
                     info.setOverriddenStatus(InstanceStatus.UNKNOWN);
+                    // 设置 应用实例状态
                     info.setStatusWithoutDirty(newStatus);
+                    // 设置 应用实例信息 数据不一致时间
                     long replicaDirtyTimestamp = 0;
                     if (lastDirtyTimestamp != null) {
                         replicaDirtyTimestamp = Long.valueOf(lastDirtyTimestamp);
                     }
                     // If the replication's dirty timestamp is more than the existing one, just update
                     // it to the replica's.
+                    // 如果复制的脏时间戳大于现有的时间戳，则只需更新
+                    // 它到副本的。
                     if (replicaDirtyTimestamp > info.getLastDirtyTimestamp()) {
                         info.setLastDirtyTimestamp(replicaDirtyTimestamp);
                     }
+                    // 添加到 最近租约变更记录队列
                     info.setActionType(ActionType.MODIFIED);
                     recentlyChangedQueue.add(new RecentlyChangedItem(lease));
+                    // 设置 最后更新时间
                     info.setLastUpdatedTimestamp();
+                    // 设置 响应缓存 过期
                     invalidateCache(appName, info.getVIPAddress(), info.getSecureVipAddress());
                 }
                 return true;
@@ -699,6 +752,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         logger.debug("Running the evict task");
 
         // ------------------------关键方法----------------
+        // 检查是否启用了租约到期
         if (!isLeaseExpirationEnabled()) {
             logger.debug("DS: lease expiration is currently disabled.");
             return;
@@ -760,7 +814,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 EXPIRED.increment();
                 logger.warn("DS: Registry: expired lease for {}/{}", appName, id);
                 // ------------------------关键方法------------------------
-                // 实例过期
+                // 实例过期，同时使缓存无效
                 internalCancel(appName, id, false);
             }
         }
@@ -818,6 +872,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     /**
      * Get all applications in this instance registry, falling back to other regions if allowed in the Eureka config.
      *
+     * 获取此实例注册表中的所有应用程序，如果在Eureka配置中允许，则返回其他区域。
+     *
      * @return the list of all known applications
      *
      * @see com.netflix.discovery.shared.LookupService#getApplications()
@@ -827,12 +883,17 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         if (disableTransparentFallback) {
             return getApplicationsFromLocalRegionOnly();
         } else {
-            return getApplicationsFromAllRemoteRegions();  // Behavior of falling back to remote region can be disabled.
+            // Behavior of falling back to remote region can be disabled.
+            // 可以禁用回退到远程区域的行为。
+            return getApplicationsFromAllRemoteRegions();
         }
     }
 
     /**
      * Returns applications including instances from all remote regions. <br/>
+     *
+     * 返回包括所有远程区域实例的应用程序。
+     *
      * Same as calling {@link #getApplicationsFromMultipleRegions(String[])} with a <code>null</code> argument.
      */
     public Applications getApplicationsFromAllRemoteRegions() {
@@ -841,6 +902,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
     /**
      * Returns applications including instances from local region only. <br/>
+     *
+     * 返回仅包含本地区域实例的应用程序。
+     *
      * Same as calling {@link #getApplicationsFromMultipleRegions(String[])} with an empty array.
      */
     @Override
@@ -858,6 +922,15 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      * If you are not selectively requesting for a remote region, use {@link #getApplicationsFromAllRemoteRegions()}
      * or {@link #getApplicationsFromLocalRegionOnly()}
      *
+     * 此方法将返回具有来自所有传递的远程区域以及当前区域的实例的应用程序。因此，这给出了来自多个区域的实例的联合视图。<BR/>
+     *
+     * 将为此联合执行的应用程序实例可以限制为{@link EurekaServerConfig＃getRemoteRegionAppWhitelist（String）}
+     * 为每个区域返回的名称。 如果没有为区域定义白名单，此方法还会通过将<code> null </ code>
+     * 传递给方法{@link EurekaServerConfig＃getRemoteRegionAppWhitelist（String）}来查找全局白名单。
+     *
+     * 如果您没有选择性地请求远程区域，请使用{@link #getApplicationsFromAllRemoteRegions（）}
+     * 或{@link #getApplicationsFromLocalRegionOnly（）}
+     *
      * @param remoteRegions The remote regions for which the instances are to be queried. The instances may be limited
      *                      by a whitelist as explained above. If <code>null</code> or empty no remote regions are
      *                      included.
@@ -873,21 +946,30 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 includeRemoteRegion, remoteRegions);
 
         if (includeRemoteRegion) {
+            // 启动后看到的远程区域查询总注册数
             GET_ALL_WITH_REMOTE_REGIONS_CACHE_MISS.increment();
         } else {
+            // 自启动以来看到的总注册查询数
             GET_ALL_CACHE_MISS.increment();
         }
+        // 获得获得注册的应用集合
         Applications apps = new Applications();
         apps.setVersion(1L);
+
+        // 遍历注册表
         for (Entry<String, Map<String, Lease<InstanceInfo>>> entry : registry.entrySet()) {
             Application app = null;
 
             if (entry.getValue() != null) {
                 for (Entry<String, Lease<InstanceInfo>> stringLeaseEntry : entry.getValue().entrySet()) {
+                    // 获得租约
                     Lease<InstanceInfo> lease = stringLeaseEntry.getValue();
                     if (app == null) {
+                        // 获得应用
                         app = new Application(lease.getHolder().getAppName());
                     }
+                    // --------------------关键方法------------------------
+                    // 装饰实例信息
                     app.addInstance(decorateInstanceInfo(lease));
                 }
             }
@@ -896,6 +978,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             }
         }
         if (includeRemoteRegion) {
+            // 指定远程区域
             for (String remoteRegion : remoteRegions) {
                 RemoteRegionRegistry remoteRegistry = regionNameVSRemoteRegistry.get(remoteRegion);
                 if (null != remoteRegistry) {
@@ -924,6 +1007,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 }
             }
         }
+        // 设置 应用集合 hashcode
         apps.setAppsHashCode(apps.getReconcileHashCode());
         return apps;
     }
@@ -1000,6 +1084,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      * @deprecated use {@link #getApplicationDeltasFromMultipleRegions(String[])} instead. This method has a
      * flawed behavior of transparently falling back to a remote region if no instances for an app is available locally.
      * The new behavior is to explicitly specify if you need a remote region.
+     *
+     * 获取有关增量更改的注册表信息。 对于由{@link EurekaServerConfig＃getRetentionTimeInMSInDeltaQueue（）}指定的窗口缓存增量。
+     * 对delta信息的后续请求可能返回相同的信息，客户必须确保这不会对它们产生负面影响。
      */
     @Deprecated
     public Applications getApplicationDeltas() {
@@ -1012,6 +1099,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             Iterator<RecentlyChangedItem> iter = this.recentlyChangedQueue.iterator();
             logger.debug("The number of elements in the delta queue is : {}",
                     this.recentlyChangedQueue.size());
+            // 遍历最近改变了队列
             while (iter.hasNext()) {
                 Lease<InstanceInfo> lease = iter.next().getLeaseInfo();
                 InstanceInfo instanceInfo = lease.getHolder();
@@ -1046,6 +1134,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             }
 
             Applications allApps = getApplications(!disableTransparentFallback);
+            // 设置hashCode
             apps.setAppsHashCode(allApps.getReconcileHashCode());
             return apps;
         } finally {
@@ -1056,6 +1145,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     /**
      * Gets the application delta also including instances from the passed remote regions, with the instances from the
      * local region. <br/>
+     *
+     * 获取应用程序增量，还包括来自传递的远程区域的实例，以及来自本地区域的实例。<BR/>
      *
      * The remote regions from where the instances will be chosen can further be restricted if this application does not
      * appear in the whitelist specified for the region as returned by
@@ -1091,17 +1182,22 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             write.lock();
             Iterator<RecentlyChangedItem> iter = this.recentlyChangedQueue.iterator();
             logger.debug("The number of elements in the delta queue is :{}", this.recentlyChangedQueue.size());
+            // 遍历最近改变了队列
             while (iter.hasNext()) {
+                // 获得租约
                 Lease<InstanceInfo> lease = iter.next().getLeaseInfo();
+                // 获得实例信息
                 InstanceInfo instanceInfo = lease.getHolder();
                 logger.debug("The instance id {} is found with status {} and actiontype {}",
                         instanceInfo.getId(), instanceInfo.getStatus().name(), instanceInfo.getActionType().name());
+                // 获得app
                 Application app = applicationInstancesMap.get(instanceInfo.getAppName());
                 if (app == null) {
                     app = new Application(instanceInfo.getAppName());
                     applicationInstancesMap.put(instanceInfo.getAppName(), app);
                     apps.addApplication(app);
                 }
+                // 加入实例
                 app.addInstance(decorateInstanceInfo(lease));
             }
 
@@ -1128,6 +1224,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                     }
                 }
             }
+
+            // ----------------------关键方法--------------------
 
             Applications allApps = getApplicationsFromMultipleRegions(remoteRegions);
             apps.setAppsHashCode(allApps.getReconcileHashCode());
@@ -1248,7 +1346,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         InstanceInfo info = lease.getHolder();
 
         // client app settings
+        // 租赁续订间隔
         int renewalInterval = LeaseInfo.DEFAULT_LEASE_RENEWAL_INTERVAL;
+        // 默认租期
         int leaseDuration = LeaseInfo.DEFAULT_LEASE_DURATION;
 
         // TODO: clean this up
@@ -1257,6 +1357,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             leaseDuration = info.getLeaseInfo().getDurationInSecs();
         }
 
+        // 构建租约
         info.setLeaseInfo(LeaseInfo.Builder.newBuilder()
                 .setRegistrationTimestamp(lease.getRegistrationTimestamp())
                 .setRenewalTimestamp(lease.getLastRenewalTimestamp())
@@ -1265,6 +1366,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 .setDurationInSecs(leaseDuration)
                 .setEvictionTimestamp(lease.getEvictionTimestamp()).build());
 
+        // 设置协调服务器标志  ？ 如果翻译
         info.setIsCoordinatingDiscoveryServer();
         return info;
     }
@@ -1331,6 +1433,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
     private void invalidateCache(String appName, @Nullable String vipAddress, @Nullable String secureVipAddress) {
         // invalidate cache
+        // -------------------------------关键方法-----------------------------
         // 使缓存无效
         responseCache.invalidate(appName, vipAddress, secureVipAddress);
     }
