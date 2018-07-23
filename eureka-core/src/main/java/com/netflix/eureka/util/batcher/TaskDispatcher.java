@@ -17,6 +17,12 @@ package com.netflix.eureka.util.batcher;
  */
 public interface TaskDispatcher<ID, T> {
 
+    /**
+     * 提交任务编号，任务，任务过期时间给任务分发器处理
+     * @param id
+     * @param task
+     * @param expiryTime
+     */
     void process(ID id, T task, long expiryTime);
 
     void shutdown();

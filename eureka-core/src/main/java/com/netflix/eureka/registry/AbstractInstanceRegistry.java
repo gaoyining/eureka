@@ -979,30 +979,39 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         }
         if (includeRemoteRegion) {
             // 指定远程区域
+            // 遍历所有的远程地区
             for (String remoteRegion : remoteRegions) {
+                // 获取远程地区注册表
                 RemoteRegionRegistry remoteRegistry = regionNameVSRemoteRegistry.get(remoteRegion);
                 if (null != remoteRegistry) {
+                    // 注册表不为空，获取远程apps
                     Applications remoteApps = remoteRegistry.getApplications();
+                    // 遍历远程apps
                     for (Application application : remoteApps.getRegisteredApplications()) {
                         if (shouldFetchFromRemoteRegistry(application.getName(), remoteRegion)) {
+                            // 默认不配置为true
                             logger.info("Application {}  fetched from the remote region {}",
                                     application.getName(), remoteRegion);
-
+                            // 根据远程appName，从本地app中获取
                             Application appInstanceTillNow = apps.getRegisteredApplications(application.getName());
                             if (appInstanceTillNow == null) {
+                                // 本地不存在appName，实例化
                                 appInstanceTillNow = new Application(application.getName());
                                 apps.addApplication(appInstanceTillNow);
                             }
+                            // 遍历远程所有的实例，加入本地appName中
                             for (InstanceInfo instanceInfo : application.getInstances()) {
                                 appInstanceTillNow.addInstance(instanceInfo);
                             }
                         } else {
+                            // 应用程序{}没有从远程区域{}获取，因为存在白名单和此应用程序不在白名单中。
                             logger.debug("Application {} not fetched from the remote region {} as there exists a "
                                             + "whitelist and this app is not in the whitelist.",
                                     application.getName(), remoteRegion);
                         }
                     }
                 } else {
+                    // 没有远程注册表可用于远程区域
                     logger.warn("No remote registry available for the remote region {}", remoteRegion);
                 }
             }
@@ -1179,6 +1188,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         apps.setVersion(responseCache.getVersionDeltaWithRegions().get());
         Map<String, Application> applicationInstancesMap = new HashMap<String, Application>();
         try {
+            // 写锁
             write.lock();
             Iterator<RecentlyChangedItem> iter = this.recentlyChangedQueue.iterator();
             logger.debug("The number of elements in the delta queue is :{}", this.recentlyChangedQueue.size());
@@ -1226,7 +1236,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             }
 
             // ----------------------关键方法--------------------
-
+            // 从多个区域获取应用程序增量
             Applications allApps = getApplicationsFromMultipleRegions(remoteRegions);
             apps.setAppsHashCode(allApps.getReconcileHashCode());
             return apps;

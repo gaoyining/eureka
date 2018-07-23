@@ -41,15 +41,25 @@ public class EurekaJerseyClientImpl implements EurekaJerseyClient {
     private static final int HTTPS_PORT = 443;
     private static final String KEYSTORE_TYPE = "JKS";
 
+    /**
+     * 基于 Apache HttpClient4 实现的 Jersey Client
+     */
     private final ApacheHttpClient4 apacheHttpClient;
+    /**
+     * Apache HttpClient 空闲连接清理器
+     */
     private final ApacheHttpClientConnectionCleaner apacheHttpClientConnectionCleaner;
 
+    /**
+     * Jersey Client 配置
+     */
     ClientConfig jerseyClientConfig;
 
     public EurekaJerseyClientImpl(int connectionTimeout, int readTimeout, final int connectionIdleTimeout,
                                   ClientConfig clientConfig) {
         try {
             jerseyClientConfig = clientConfig;
+            // 创建  ApacheHttpClient
             apacheHttpClient = ApacheHttpClient4.create(jerseyClientConfig);
             HttpParams params = apacheHttpClient.getClientHandler().getHttpClient().getParams();
 
