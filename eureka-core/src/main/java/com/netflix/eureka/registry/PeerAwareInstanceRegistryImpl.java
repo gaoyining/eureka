@@ -64,14 +64,11 @@ import javax.inject.Singleton;
  * Handles replication of all operations to {@link AbstractInstanceRegistry} to peer
  * <em>Eureka</em> nodes to keep them all in sync.
  *
- * 处理所有操作到{@link AbstractInstanceRegistry}的复制到对等<em> Eureka </ em>节点，以使它们保持同步。
  *
  * <p>
  * Primary operations that are replicated are the
  * <em>Registers,Renewals,Cancels,Expirations and Status Changes</em>
  *
- * 复制的主要操作是<em>注册，续订，取消，过期和状态更改</ em>
- * </p>
  *
  * <p>
  * When the eureka server starts up it tries to fetch all the registry
@@ -88,6 +85,10 @@ import javax.inject.Singleton;
  * {@link com.netflix.eureka.EurekaServerConfig#getRenewalThresholdUpdateIntervalMs()}, eureka
  * perceives this as a danger and stops expiring instances.
  * </p>
+ *
+ * 处理所有操作到{@link AbstractInstanceRegistry}的复制到对等<em> Eureka </ em>节点，以使它们保持同步。
+ *
+ * 复制的主要操作是<em>注册，续订，取消，过期和状态更改</ em>
  *
  * @author Karthik Ranganathan, Greg Kim
  *
@@ -225,13 +226,17 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      * Populates the registry information from a peer eureka node. This
      * operation fails over to other nodes until the list is exhausted if the
      * communication fails.
+     *
+     * 填充来自对等eureka节点的注册表信息。 如果通信失败，此操作将故障转移到其他节点，直到列表用尽为止。
      */
     @Override
     public int syncUp() {
         // Copy entire entry from neighboring DS node
+        // 从邻近的DS节点复制整个条目
         int count = 0;
 
         for (int i = 0; ((i < serverConfig.getRegistrySyncRetries()) && (count == 0)); i++) {
+            // 未读取到注册信息，sleep 等待
             if (i > 0) {
                 try {
                     Thread.sleep(serverConfig.getRegistrySyncRetryWaitMs());
@@ -240,11 +245,15 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
                     break;
                 }
             }
+            // 获取注册信息
             Applications apps = eurekaClient.getApplications();
             for (Application app : apps.getRegisteredApplications()) {
                 for (InstanceInfo instance : app.getInstances()) {
                     try {
+                        // 判断是否能够注册，非AWS都可以注册
                         if (isRegisterable(instance)) {
+                            // ----------------------关键方法------------------------
+                            // 注册新实例
                             register(instance, instance.getLeaseInfo().getDurationInSecs(), true);
                             count++;
                         }
@@ -658,6 +667,8 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
     /**
      * Checks if an instance is registerable in this region. Instances from other regions are rejected.
      *
+     * 检查实例是否可在此区域中注册。 来自其他地区的实例被拒绝。
+     *
      * @param instanceInfo  th instance info information of the instance
      * @return true, if it can be registered in this server, false otherwise.
      */
@@ -668,14 +679,18 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
             AmazonInfo info = AmazonInfo.class.cast(instanceInfo.getDataCenterInfo());
             String availabilityZone = info.get(MetaDataKey.availabilityZone);
             // Can be null for dev environments in non-AWS data center
+            // 对于非AWS数据中心中的dev环境，可以为null
             if (availabilityZone == null && US_EAST_1.equalsIgnoreCase(serverRegion)) {
                 return true;
             } else if ((availabilityZone != null) && (availabilityZone.contains(serverRegion))) {
                 // If in the same region as server, then consider it registerable
+                // 如果在与服务器相同的区域中，则认为它是可注册的
                 return true;
             }
         }
-        return true; // Everything non-amazon is registrable.
+        // Everything non-amazon is registrable.
+        // 非亚马逊的一切都是可以注册的。
+        return true;
     }
 
     /**
@@ -693,16 +708,21 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
             if (isReplication) {
                 numberOfReplicationsLastMin.increment();
             }
+            // Eureka-Server 发起的请求 或者 集群为空
             // If it is a replication already, do not replicate again as this will create a poison replication
+            // 如果它已经是复制，请不要再次复制，因为这将创建错误复制
             if (peerEurekaNodes == Collections.EMPTY_LIST || isReplication) {
                 return;
             }
 
             for (final PeerEurekaNode node : peerEurekaNodes.getPeerEurekaNodes()) {
                 // If the url represents this host, do not replicate to yourself.
+                // 如果url代表此主机，请不要复制给自己。
                 if (peerEurekaNodes.isThisMyUrl(node.getServiceUrl())) {
                     continue;
                 }
+                // ----------------------关键方法-----------------------
+                // 同步信息
                 replicateInstanceActionsToPeers(action, appName, id, info, newStatus, node);
             }
         } finally {
@@ -713,6 +733,8 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
     /**
      * Replicates all instance changes to peer eureka nodes except for
      * replication traffic to this node.
+     *
+     * 将所有实例更改复制到对等eureka节点，但此节点的复制流量除外。
      *
      */
     private void replicateInstanceActionsToPeers(Action action, String appName,

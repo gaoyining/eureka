@@ -46,6 +46,9 @@ import org.slf4j.LoggerFactory;
  * A <em>jersey</em> resource that handles request related to a particular
  * {@link com.netflix.discovery.shared.Application}.
  *
+ * 一个<em> jersey </ em>资源，用于处理与特定内容相关的请求
+ * {@link com.netflix.discovery.shared.Application}.
+ *
  * @author Karthik Ranganathan, Greg Kim
  *
  */

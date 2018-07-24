@@ -42,6 +42,14 @@ import org.slf4j.LoggerFactory;
  * node it represents.
  * <p>
  *
+ *     <code> PeerEurekaNode </ code>表示应该从该节点共享信息的对等节点。
+ *
+ *  <P>
+ *   此类处理复制所有更新操作，如
+ *  <em>注册，续订，取消，到期和状态更改</ em>到eureka
+ *  它代表的节点。
+ * <P>
+ *
  * @author Karthik Ranganathan, Greg Kim
  *
  */
@@ -75,6 +83,9 @@ public class PeerEurekaNode {
 
     private final String serviceUrl;
     private final EurekaServerConfig config;
+    /**
+     * 最大处理延迟时间
+     */
     private final long maxProcessingDelayMs;
     private final PeerAwareInstanceRegistry registry;
     private final String targetHost;
@@ -101,6 +112,8 @@ public class PeerEurekaNode {
 
         String batcherName = getBatcherName();
         ReplicationTaskProcessor taskProcessor = new ReplicationTaskProcessor(targetHost, replicationClient);
+        // -----------------------关键方法------------------------
+        // 创建批量任务调度器
         this.batchingDispatcher = TaskDispatchers.createBatchingTaskDispatcher(
                 batcherName,
                 config.getMaxElementsInPeerReplicationPool(),
@@ -111,6 +124,8 @@ public class PeerEurekaNode {
                 retrySleepTimeMs,
                 taskProcessor
         );
+        // -----------------------关键方法------------------------
+        // 创建单笔任务调度器
         this.nonBatchingDispatcher = TaskDispatchers.createNonBatchingTaskDispatcher(
                 targetHost,
                 config.getMaxElementsInStatusReplicationPool(),
@@ -125,6 +140,8 @@ public class PeerEurekaNode {
     /**
      * Sends the registration information of {@link InstanceInfo} receiving by
      * this node to the peer node represented by this class.
+     *
+     * 将此节点接收的{@link InstanceInfo}的注册信息发送给该类所代表的对等节点。
      *
      * @param info
      *            the instance information {@link InstanceInfo} of any instance
@@ -148,6 +165,8 @@ public class PeerEurekaNode {
      * Send the cancellation information of an instance to the node represented
      * by this class.
      *
+     * 将实例的取消信息发送到此类表示的节点。
+     *
      * @param appName
      *            the application name of the instance.
      * @param id
@@ -155,6 +174,7 @@ public class PeerEurekaNode {
      * @throws Exception
      */
     public void cancel(final String appName, final String id) throws Exception {
+        // 到期时间 = 当前时间 + 最大延迟执行时间
         long expiryTime = System.currentTimeMillis() + maxProcessingDelayMs;
         batchingDispatcher.process(
                 taskId("cancel", appName, id),
@@ -213,11 +233,16 @@ public class PeerEurekaNode {
                     if (info != null) {
                         logger.warn("{}: cannot find instance id {} and hence replicating the instance with status {}",
                                 getTaskName(), info.getId(), info.getStatus());
+                        // -----------------------关键方法-----------------------
+                        // 注册
                         register(info);
                     }
                 } else if (config.shouldSyncWhenTimestampDiffers()) {
+                    // 同步应用实例信息，当应用实例信息最后更新时间戳( lastDirtyTimestamp )发生改变
                     InstanceInfo peerInstanceInfo = (InstanceInfo) responseEntity;
                     if (peerInstanceInfo != null) {
+                        // -----------------------关键方法-----------------------
+                        // 时间戳不同，允许同步实例信息
                         syncInstancesIfTimestampDiffers(appName, id, info, peerInstanceInfo);
                     }
                 }
@@ -354,17 +379,26 @@ public class PeerEurekaNode {
     /**
      * Synchronize {@link InstanceInfo} information if the timestamp between
      * this node and the peer eureka nodes vary.
+     *
+     * 如果此节点与对等eureka节点之间的时间戳不同，则同步{@link InstanceInfo}信息。
+     *
      */
     private void syncInstancesIfTimestampDiffers(String appName, String id, InstanceInfo info, InstanceInfo infoFromPeer) {
         try {
             if (infoFromPeer != null) {
+                // Peer希望我们从中获取实例信息，因为时间戳不同
                 logger.warn("Peer wants us to take the instance information from it, since the timestamp differs,"
                         + "Id : {} My Timestamp : {}, Peer's timestamp: {}", id, info.getLastDirtyTimestamp(), infoFromPeer.getLastDirtyTimestamp());
 
                 if (infoFromPeer.getOverriddenStatus() != null && !InstanceStatus.UNKNOWN.equals(infoFromPeer.getOverriddenStatus())) {
+                    // 返回的实例覆盖状态不为空 && 不等于 UNKNOWN
                     logger.warn("Overridden Status info -id {}, mine {}, peer's {}", id, info.getOverriddenStatus(), infoFromPeer.getOverriddenStatus());
+                    // ---------------------关键方法----------------------
+                    // 存储已覆盖状态（如果尚未存在）。
                     registry.storeOverriddenStatusIfRequired(appName, id, infoFromPeer.getOverriddenStatus());
                 }
+                // ---------------------关键方法----------------------
+                // 发起注册
                 registry.register(infoFromPeer, true);
             }
         } catch (Throwable e) {

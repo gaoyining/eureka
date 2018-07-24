@@ -271,7 +271,6 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
                 // this is a > instead of a >= because if the timestamps are equal, we still take the remote transmitted
                 // InstanceInfo instead of the server local copy.
-                //这是一个>而不是> =因为如果时间戳相等，我们仍然会传输远程
                 // InstanceInfo而不是服务器本地副本。
                 if (existingLastDirtyTimestamp > registrationLastDirtyTimestamp) {
                     logger.warn("There is an existing lease and the existing lease's dirty timestamp {} is greater" +
@@ -282,7 +281,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 }
             } else {
                 // The lease does not exist and hence it is a new registration
-                //租约不存在，因此是新注册
+                // 租约不存在，因此是新注册
 
                 // 【自我保护机制】增加 `numberOfRenewsPerMinThreshold` 、`expectedNumberOfRenewsPerMin`
                 synchronized (lock) {
@@ -538,6 +537,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      * Stores overridden status if it is not already there. This happens during
      * a reconciliation process during renewal requests.
      *
+     * 存储已覆盖状态（如果尚未存在）。 这在续订请求期间的对帐过程中发生。
+     *
      * @param appName the application name of the instance.
      * @param id the unique identifier of the instance.
      * @param overriddenStatus overridden status if any.
@@ -549,6 +550,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             // We might not have the overridden status if the server got
             // restarted -this will help us maintain the overridden state
             // from the replica
+            // 如果服务器得到，我们可能没有被覆盖的状态
+            // 重新启动 - 这将帮助我们维持被覆盖的状态
+            // 来自副本
             logger.info("Adding overridden status for instance id {} and the value is {}",
                     id, overriddenStatus.name());
             overriddenInstanceStatusMap.put(id, overriddenStatus);

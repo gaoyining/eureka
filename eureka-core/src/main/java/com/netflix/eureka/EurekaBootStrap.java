@@ -244,16 +244,18 @@ public class EurekaBootStrap implements ServletContextListener {
         EurekaServerContextHolder.initialize(serverContext);
 
         // --------------------关键方法--------------------
-        // 初始化serverContext 很复杂，今天没看完
+        // 初始化serverContext 集群初始化也在这里
         serverContext.initialize();
         logger.info("Initialized server context");
 
         // Copy registry from neighboring eureka node
         //从邻近的eureka节点复制注册表
         // --------------------关键方法--------------------
-        // 从其他 Eureka-Server 拉取注册信息  很复杂，没看完
+        // 从其他 Eureka-Server 拉取注册信息
         int registryCount = registry.syncUp();
 
+        // 若调用 #syncUp() 方法，未获取到应用实例，则 Eureka-Server
+        // 会有一段时间( 默认：5 分钟，可配 )不允许被 Eureka-Client 获取注册信息，避免影响 Eureka-Client 。
         // -----------------------关键方法------------------------
         // 开启与关闭相关
         registry.openForTraffic(applicationInfoManager, registryCount);

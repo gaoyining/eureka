@@ -41,6 +41,7 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
     @Override
     public ProcessingResult process(ReplicationTask task) {
         try {
+            // 执行单任务
             EurekaHttpResponse<?> httpResponse = task.execute();
             int statusCode = httpResponse.getStatusCode();
             Object entity = httpResponse.getEntity();
@@ -48,6 +49,7 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
                 logger.debug("Replication task {} completed with status {}, (includes entity {})", task.getTaskName(), statusCode, entity != null);
             }
             if (isSuccess(statusCode)) {
+                // 成功了
                 task.handleSuccess();
             } else if (statusCode == 503) {
                 logger.debug("Server busy (503) reply for task {}", task.getTaskName());
@@ -75,28 +77,39 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
 
     @Override
     public ProcessingResult process(List<ReplicationTask> tasks) {
+        // ------------------------关键方法--------------------------
+        // 创建 批量提交同步操作任务的请求对象
         ReplicationList list = createReplicationListOf(tasks);
         try {
+            // ------------------------关键方法--------------------------
+            // 发送请求
             EurekaHttpResponse<ReplicationListResponse> response = replicationClient.submitBatchUpdates(list);
             int statusCode = response.getStatusCode();
             if (!isSuccess(statusCode)) {
+                // 没有成功
                 if (statusCode == 503) {
+                    // 503错误，被限流了，会重新执行
                     logger.warn("Server busy (503) HTTP status code received from the peer {}; rescheduling tasks after delay", peerId);
                     return ProcessingResult.Congestion;
                 } else {
                     // Unexpected error returned from the server. This should ideally never happen.
+                    // 从服务器返回意外错误。 理想情况下，这应该不会发生。
                     logger.error("Batch update failure with HTTP status code {}; discarding {} replication tasks", statusCode, tasks.size());
                     return ProcessingResult.PermanentError;
                 }
             } else {
+                // 成功
+                // ------------------------关键方法--------------------------
                 handleBatchResponse(tasks, response.getEntity().getResponseList());
             }
         } catch (Throwable e) {
             if (maybeReadTimeOut(e)) {
                 logger.error("It seems to be a socket read timeout exception, it will retry later. if it continues to happen and some eureka node occupied all the cpu time, you should set property 'eureka.server.peer-node-read-timeout-ms' to a bigger value", e);
-            	//read timeout exception is more Congestion then TransientError, return Congestion for longer delay 
+            	//read timeout exception is more Congestion then TransientError, return Congestion for longer delay
+                //读取超时异常是更多拥塞然后是TransientError，返回拥塞更长的延迟
                 return ProcessingResult.Congestion;
             } else if (isNetworkConnectException(e)) {
+                // 判断是不是网络超时异常，会重新执行
                 logNetworkErrorSample(null, e);
                 return ProcessingResult.TransientError;
             } else {
@@ -112,6 +125,9 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
      * As tasks are executed by a pool of threads the error logging multiplies. For example:
      * 20 threads * 100ms delay == 200 error entries / sec worst case
      * Still we would like to see the exception samples, so we print samples at regular intervals.
+     *
+     * 我们想要热切地重试，但没有洪水日志文件与大量的错误条目。 当任务由线程池执行时，错误记录会倍增。
+     * 例如：20个线程* 100ms延迟== 200个错误条目/秒最坏情况仍然我们希望看到异常样本，因此我们定期打印样本。
      */
     private void logNetworkErrorSample(ReplicationTask task, Throwable e) {
         long now = System.currentTimeMillis();
@@ -130,10 +146,13 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
     private void handleBatchResponse(List<ReplicationTask> tasks, List<ReplicationInstanceResponse> responseList) {
         if (tasks.size() != responseList.size()) {
             // This should ideally never happen unless there is a bug in the software.
+            // 理想情况下，除非软件中存在错误，否则绝不会发生这种情况。
             logger.error("Batch response size different from submitted task list ({} != {}); skipping response analysis", responseList.size(), tasks.size());
             return;
         }
         for (int i = 0; i < tasks.size(); i++) {
+            // --------------------关键方法----------------------
+            // 处理相应
             handleBatchResponse(tasks.get(i), responseList.get(i));
         }
     }
@@ -141,11 +160,14 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
     private void handleBatchResponse(ReplicationTask task, ReplicationInstanceResponse response) {
         int statusCode = response.getStatusCode();
         if (isSuccess(statusCode)) {
+            // 成功
             task.handleSuccess();
             return;
         }
 
         try {
+            // ----------------------关键方法------------------
+            // 初始失败
             task.handleFailure(response.getStatusCode(), response.getResponseEntity());
         } catch (Throwable e) {
             logger.error("Replication task {} error handler failure", task.getTaskName(), e);
@@ -156,6 +178,7 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
         ReplicationList list = new ReplicationList();
         for (ReplicationTask task : tasks) {
             // Only InstanceReplicationTask are batched.
+            // 仅对InstanceReplicationTask进行批处理。
             list.addReplicationInstance(createReplicationInstanceOf((InstanceReplicationTask) task));
         }
         return list;
@@ -185,6 +208,8 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
     
     /**
      * Check if the exception is socket read time out exception
+     *
+     * 检查异常是否为套接字读取超时异常
      *
      * @param e
      *            The exception for which the information needs to be found.

@@ -340,6 +340,7 @@ public class InstanceResource {
                 if (lastDirtyTimestamp > appInfo.getLastDirtyTimestamp()) {
                     // 意味着请求方( 可能是 Eureka-Client ，也可能是 Eureka-Server 集群内的其他 Server )
                     // 存在 InstanceInfo 和 Eureka-Server 的 InstanceInfo 的数据不一致，返回 404 响应。请求方收到 404 响应后重新发起注册
+                    // 服务器上的续租时间比客户端发送过来的小
                     logger.debug(
                             "Time to sync, since the last dirty timestamp differs -"
                                     + " ReplicationInstance id : {},Registry : {} Incoming: {} Replication: {}",
@@ -348,8 +349,9 @@ public class InstanceResource {
                 } else if (appInfo.getLastDirtyTimestamp() > lastDirtyTimestamp) {
                     // In the case of replication, send the current instance info in the registry for the
                     // replicating node to sync itself with this one.
-                    //在复制的情况下，在注册表中发送当前实例信息
-                    //复制节点以与此节点同步。
+                    // 在复制的情况下，在注册表中发送当前实例信息
+                    // 复制节点以与此节点同步。
+                    // 服务器上的续租时间比客户端发送过来的大
                     if (isReplication) {
                         logger.debug(
                                 "Time to sync, since the last dirty timestamp differs -"

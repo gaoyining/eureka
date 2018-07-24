@@ -76,7 +76,8 @@ public class TaskDispatchers {
         final AcceptorExecutor<ID, T> acceptorExecutor = new AcceptorExecutor<>(
                 id, maxBufferSize, workloadSize, maxBatchingDelay, congestionRetryDelayMs, networkFailureRetryMs
         );
-        // 创建 批量任务执行器
+        // -----------------------关键方法--------------------
+        // 创建批量任务执行器
         final TaskExecutors<ID, T> taskExecutor = TaskExecutors.batchExecutors(id, workerCount, taskProcessor, acceptorExecutor);
         // 创建 批量任务分发器
         return new TaskDispatcher<ID, T>() {

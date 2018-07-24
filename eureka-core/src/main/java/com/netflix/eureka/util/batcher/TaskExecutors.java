@@ -109,6 +109,7 @@ class TaskExecutors<ID, T> {
         // 是否停止
         final AtomicBoolean isShutdown = new AtomicBoolean();
         final TaskExecutorMetrics metrics = new TaskExecutorMetrics(name);
+        // ---------------------------关键方法----------------------
         // 创建批量任务执行器
         return new TaskExecutors<>(
                 // 批量任务工作线程工厂
@@ -267,8 +268,10 @@ class TaskExecutors<ID, T> {
                 }
             } catch (InterruptedException e) {
                 // Ignore
+                // 忽视
             } catch (Throwable e) {
                 // Safe-guard, so we never exit this loop in an uncontrolled way.
+                // 安全保护，所以我们永远不会以不受控制的方式退出这个循环。
                 logger.warn("Discovery WorkerThread error", e);
             }
         }

@@ -200,6 +200,7 @@ public class EndpointUtils {
         // 老的url地址
         List<String> orderedUrls = new ArrayList<String>();
         String region = getRegion(clientConfig);
+        // 获取所有的可用区域
         String[] availZones = clientConfig.getAvailabilityZones(clientConfig.getRegion());
         if (availZones == null || availZones.length == 0) {
             availZones = new String[1];
@@ -208,6 +209,7 @@ public class EndpointUtils {
         logger.debug("The availability zone for the given region {} are {}", region, availZones);
         int myZoneOffset = getZoneOffset(instanceZone, preferSameZone, availZones);
 
+        // 获得服务url列表
         List<String> serviceUrls = clientConfig.getEurekaServerServiceUrls(availZones[myZoneOffset]);
         if (serviceUrls != null) {
             orderedUrls.addAll(serviceUrls);
@@ -379,6 +381,7 @@ public class EndpointUtils {
 
     /**
      * Gets the zone to pick up for this instance.
+     * 获取要为此实例选取的区域。
      */
     private static int getZoneOffset(String myZone, boolean preferSameZone, String[] availZones) {
         for (int i = 0; i < availZones.length; i++) {

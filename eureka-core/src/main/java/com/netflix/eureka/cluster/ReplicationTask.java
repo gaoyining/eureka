@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Base class for all replication tasks.
+ *
+ * 所有复制任务的基类。
  */
 abstract class ReplicationTask {
 

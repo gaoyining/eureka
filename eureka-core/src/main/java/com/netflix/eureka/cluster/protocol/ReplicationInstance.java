@@ -7,6 +7,8 @@ import com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl.Action;
 
 /**
  * The jersey resource class that generates a particular replication event
+ *
+ * 生成特定复制事件的jersey资源类
  */
 public class ReplicationInstance {
     private String appName;

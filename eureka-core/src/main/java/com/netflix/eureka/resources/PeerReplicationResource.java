@@ -66,6 +66,8 @@ public class PeerReplicationResource {
     /**
      * Process batched replication events from peer eureka nodes.
      *
+     * 处理来自对等eureka节点的批处理复制事件。
+     *
      * <p>
      *  The batched events are delegated to underlying resources to generate a
      *  {@link ReplicationListResponse} containing the individual responses to the batched events
@@ -80,8 +82,11 @@ public class PeerReplicationResource {
     public Response batchReplication(ReplicationList replicationList) {
         try {
             ReplicationListResponse batchResponse = new ReplicationListResponse();
+            // 逐个同步操作任务处理，并将处理结果( ReplicationInstanceResponse ) 合并到 ReplicationListResponse 。
             for (ReplicationInstance instanceInfo : replicationList.getReplicationList()) {
                 try {
+                    // -----------------------关键方法-----------------------
+                    // 处理不同类型的任务
                     batchResponse.addResponse(dispatch(instanceInfo));
                 } catch (Exception e) {
                     batchResponse.addResponse(new ReplicationInstanceResponse(Status.INTERNAL_SERVER_ERROR.getStatusCode(), null));
@@ -145,6 +150,8 @@ public class PeerReplicationResource {
     }
 
     private static Builder handleHeartbeat(EurekaServerConfig config, InstanceResource resource, String lastDirtyTimestamp, String overriddenStatus, String instanceStatus) {
+        // ---------------------关键方法-----------------
+        // 调用续租
         Response response = resource.renewLease(REPLICATION, overriddenStatus, instanceStatus, lastDirtyTimestamp);
         int responseStatus = response.getStatus();
         Builder responseBuilder = new Builder().setStatusCode(responseStatus);
