@@ -97,6 +97,8 @@ public class ApplicationsResource {
     /**
      * Get information about all {@link com.netflix.discovery.shared.Applications}.
      *
+     * 在{@link com.netflix.discovery.shared.Applications}中获取有关所有增量更改的信息。
+     *
      * @param version the version of the request.
      * @param acceptHeader the accept header to indicate whether to serve JSON or XML data.
      * @param acceptEncoding the accept header to indicate whether to serve compressed or uncompressed data.

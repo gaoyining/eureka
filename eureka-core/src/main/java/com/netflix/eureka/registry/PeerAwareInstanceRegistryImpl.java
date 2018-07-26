@@ -285,6 +285,7 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
             this.peerInstancesTransferEmptyOnStartup = false;
         }
         DataCenterInfo.Name selfName = applicationInfoManager.getInfo().getDataCenterInfo().getName();
+        // AWS 相关跳过
         boolean isAws = Name.Amazon == selfName;
         if (isAws && serverConfig.shouldPrimeAwsReplicaConnections()) {
             logger.info("Priming AWS connections for all replicas..");

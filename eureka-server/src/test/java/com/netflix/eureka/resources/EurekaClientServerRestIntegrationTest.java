@@ -218,7 +218,7 @@ public class EurekaClientServerRestIntegrationTest {
 
         System.setProperty("eureka.region", "default");
         System.setProperty("eureka.name", "eureka");
-        System.setProperty("eureka.vipAddress", "eureka.mydomain.net");
+//        System.setProperty("eureka.vipAddress", "eureka.mydomain.net");
         System.setProperty("eureka.port", "8080");
         System.setProperty("eureka.preferSameZone", "false");
         System.setProperty("eureka.shouldUseDns", "false");
